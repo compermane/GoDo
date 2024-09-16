@@ -1,13 +1,20 @@
-package coordinates
+package geometry
 
+/*
+	TODO:
+	- O projeto para o qual vc quer gerar os testes será sempre um projeto externo
+	- Testar com projetos do benchmark do artigo do nxt_unit
+	- Verificar a ferramenta nxt_unit
+	- Verificar o código de obtenção de função
+*/
 import (
 	"fmt"
 	"math"
 )
 
 type Point struct {
-	x	float64;
-	y   float64;
+	X	float64;
+	Y   float64;
 }
 
 type Line struct {
@@ -25,27 +32,27 @@ func InitPoint(x, y float64) (*Point) {
 }
 
 func (pointA *Point) ManhattanDistance(pointB *Point) float64 {
-	return math.Abs(pointA.x - pointB.x) + math.Abs(pointA.y - pointB.y)
+	return math.Abs(pointA.X - pointB.X) + math.Abs(pointA.Y - pointB.Y)
 }
 
 func (pointA *Point) EuclideanDistance(pointB *Point) float64 {
-	return math.Sqrt(math.Pow((pointA.x - pointB.x), 2) + math.Pow((pointA.y - pointA.y), 2))
+	return math.Sqrt(math.Pow((pointA.X - pointB.X), 2) + math.Pow((pointA.Y - pointA.Y), 2))
 }
 
 func PointToLineDistance(point *Point, line *Line) float64 {
-	num := math.Abs(line.m * point.x + point.y + line.b)
+	num := math.Abs(line.m * point.X + point.Y + line.b)
 	dem := math.Sqrt(math.Pow(line.m, 2) + 1)
 
 	return num / dem
 }
 
 func (point *Point) ToString() string {
-	return fmt.Sprintf("(%v, %v)", point.x, point.y)
+	return fmt.Sprintf("(%v, %v)", point.X, point.Y)
 }
 
 func GetLineFromPoints(pointA, pointB *Point) *Line {
-	m := (pointB.y - pointA.y) / (pointB.x - pointA.x)
-	b := -(m * pointA.x) + pointA.y
+	m := (pointB.Y - pointA.Y) / (pointB.X - pointA.X)
+	b := -(m * pointA.X) + pointA.Y
 
 	return &Line{m, b}
 }
