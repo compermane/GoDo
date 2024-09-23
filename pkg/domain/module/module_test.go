@@ -8,11 +8,16 @@ func TestInit(t *testing.T) {
 	example_file := "/home/eugenio/Área de trabalho/Grad/IC/ic-go/geometry/geometry.go"
 	rel_path := "/home/eugenio/Área de trabalho/Grad/IC/ic-go/geometry"
 	import_str := "github.com/compermane/ic-go/geometry"
+	
+	imports := make([]string, 2)
+	imports = append(imports, "math")
+	imports = append(imports, "fmt")
+	
 	files := make([]string, 1)
 
 	files = append(files, "geometry.go")
 
-	mod, err := InitModule(example_file, rel_path, import_str)
+	mod, err := InitModule(example_file, rel_path, import_str, imports)
 
 	if err != nil {
 		t.Errorf("Erro durante inicialização de módulo: %v\n", err)

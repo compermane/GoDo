@@ -14,9 +14,10 @@ type Module struct {
 	RelPath 	string
 	ImportStr	string
 	Files  		[]string
+	Imports 	[]string
 }
 
-func InitModule(example_file, rel_path, import_str string) (mod *Module, e error) {
+func InitModule(example_file, rel_path, import_str string, imports []string) (mod *Module, e error) {
 	fset := token.NewFileSet()
 
 	file, err := parser.ParseFile(fset, example_file, nil, parser.PackageClauseOnly)
@@ -44,6 +45,7 @@ func InitModule(example_file, rel_path, import_str string) (mod *Module, e error
 		RelPath: rel_path,
 		ImportStr: import_str,
 		Files: files,
+		Imports: imports,
 	}
 
 	return mod, nil
