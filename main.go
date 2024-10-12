@@ -5,53 +5,21 @@ import (
 	"reflect"
 
 	geometry "github.com/compermane/ic-go/geometry"
+	executor "github.com/compermane/ic-go/pkg/domain/executor"
 	functions "github.com/compermane/ic-go/pkg/domain/functions"
 	module "github.com/compermane/ic-go/pkg/domain/module"
-	executor "github.com/compermane/ic-go/pkg/executor"
+	receiver "github.com/compermane/ic-go/pkg/domain/receiver"
 )
 
-func func_info() {
-    imports := []string{"math", "fmt"}
-    mod, _ := module.InitModule("/home/eugenio/Área de trabalho/Grad/IC/ic-go/geometry/geometry.go",
-                                "/home/eugenio/Área de trabalho/Grad/IC/ic-go/geometry", "github.com/compermane/ic-go/geometry", imports)           
-
-    functions, _ := functions.GetFunctionsFromModule(mod)
-    functions = functions[0:1]
-    for _, fn := range functions {
-        fmt.Printf("%v, %v, Receiver: %v ", fn.Name, fn.IsMethod, fn.ReceiverType)
-
-        fmt.Print("Args: [")
-        for _, arg := range fn.ArgTypes {
-            fmt.Printf("%v ", arg)
-        }
-        fmt.Print("] ")
-
-        fmt.Print("Returns: [")
-        for _, ret := range fn.ReturnTypes {
-            fmt.Printf("%v ", ret)
-        }
-        fmt.Print("] ")
-
-        print("\n")
-    }
-}
-
-func func_signatures() {
-    imports := []string{"math", "fmt"}
-    mod, _ := module.InitModule("/home/eugenio/Área de trabalho/Grad/IC/ic-go/geometry/geometry.go",
-    "/home/eugenio/Área de trabalho/Grad/IC/ic-go/geometry", "github.com/compermane/ic-go/geometry", imports)  
-
-    signatures, _ := functions.GetFunctionSignatures(mod)
-
-    for key, value := range signatures {
-        fmt.Printf("%v: %v\n", key, value)
-    }
-}
-
 func func_executor() {
+    var fns map[string]any
+
+    fns["InitPoint"] = geometry.InitPoint
+    fns["Add"] = geometry.Add
     var args []reflect.Value
     fn := reflect.ValueOf(geometry.InitPoint)
 
+    fmt.Printf("value of: %v\n", reflect.ValueOf(fn))
     args = append(args, reflect.ValueOf(10.0))
     args = append(args, reflect.ValueOf(10.0))
 
@@ -61,44 +29,64 @@ func func_executor() {
         fmt.Println(result.Type())
         fmt.Println(result)
     }
-    imports := []string{"math", "fmt"}
-    mod, _ := module.InitModule("/home/eugenio/Área de trabalho/Grad/IC/ic-go/geometry/geometry.go",
-                                "/home/eugenio/Área de trabalho/Grad/IC/ic-go/geometry", "github.com/compermane/ic-go/geometry", imports)      
-    fns, _ := functions.GetFunctionSignatures(mod)
+}
 
-    for key, value := range fns {
-        fmt.Printf("%v: %v\n", key, value)
+func info_with_reflect() {
+    fn := geometry.InitPoint
+
+    function := functions.GetFunction(fn)
+
+    fmt.Printf("name: %v\n", function.Name)
+    for _, arg := range function.ArgTypes {
+        fmt.Printf("%v ", arg)
+    }
+    fmt.Println()
+
+    for _, ret := range function.ReturnTypes {
+        fmt.Printf("%v ", ret)
     }
 
-    // float64_values, _ := functions.Float64Generator(2, -10, 20)
-    // reflect_values := functions.Float64ToReflectValues(float64_values)
-    // result := functions.RunFunc(fns["InitPoint"], reflect_values)
+    functions.SetFuncArgs(function)
+    r_args := functions.ArgToReflectValue(function.Args)
+    results := function.Signature.Call(r_args)
 
-    // fmt.Println(result)
+    for _, result := range results {
+        fmt.Println(result)
+    }
 }
 
-func f_utils() {
-    values, _ := functions.Float64Generator(3, -1000, 10)
-
-    fmt.Println(values)
-}
-
-func exec_test() {
+func receivers_test() {
     imports := []string{"math", "fmt"}
     mod, _ := module.InitModule("/home/eugenio/Área de trabalho/Grad/IC/ic-go/geometry/geometry.go",
     "/home/eugenio/Área de trabalho/Grad/IC/ic-go/geometry", "github.com/compermane/ic-go/geometry", imports)  
 
-    fns, _ := functions.GetFunctionsFromModule(mod)
+    structs, _ := receiver.GetReceivers(mod)
 
-    fns = fns[0:1]
-    functions.SetFuncArgs(fns[0])
+    for _, struct_rcv := range structs {
+        fmt.Printf("Name: %v\n", struct_rcv.Name)
+        for i := 0; i < len(struct_rcv.AttrNames); i++ {
+            fmt.Printf("%v: %v\n", struct_rcv.AttrNames[i], struct_rcv.AttrTypes[i])
+        }
+    }
+}
 
-    executor.WriteIntermediateFile(fns, mod)
+func executor_test() {
+    funcs := []any{geometry.InitPoint, geometry.GetLineFromPoints, geometry.Add}
+
+    executor := executor.InitExecutor(funcs)
+
+    executor.AnalyseFuncs()
+
+    executor.PrintFunctions()
+    executor.PrintNextCandidates()
 }
 
 func main() {
-    exec_test()
+    // exec_test()
+    // receivers_test()
     // func_executor()
+    // info_with_reflect(
+    executor_test()
     // func_info()
     // func_signatures()
     // f_utils()

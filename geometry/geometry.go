@@ -22,6 +22,10 @@ type Line struct {
 	b 	float64;
 }
 
+func Add(a, b int) int {
+	return a + b
+}
+
 func InitPoint(x, y float64) (*Point) {
 	point := &Point{
 		x, 
@@ -50,7 +54,7 @@ func (point *Point) ToString() string {
 	return fmt.Sprintf("(%v, %v)", point.X, point.Y)
 }
 
-func GetLineFromPoints(pointA, pointB *Point) *Line {
+func GetLineFromPoints(pointA *Point, pointB *Point) *Line {
 	m := (pointB.Y - pointA.Y) / (pointB.X - pointA.X)
 	b := -(m * pointA.X) + pointA.Y
 

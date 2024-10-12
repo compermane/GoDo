@@ -12,132 +12,68 @@ import (
 	"go/types"
 	"os"
 	"reflect"
+	"runtime"
 	"strings"
 
 	module "github.com/compermane/ic-go/pkg/domain/module"
+	receiver "github.com/compermane/ic-go/pkg/domain/receiver"
+	utils "github.com/compermane/ic-go/pkg/utils"
 )
 
 type Function struct {
-	Name			string			// Nome da função
-	IsMethod		bool			// Se é um método, isto é, se existe um receiver para a função
-	ReceiverType 	string
-	Module			*module.Module	// Módulo da função
-	ArgTypes 		[]string		// Tipos dos argumentos de entrada
+	Name			string				// Nome da função
+	Signature 		reflect.Value		// Função propriamente dita a ser executada
+	IsMethod		bool				// Se é um método, isto é, se existe um receiver para a função
+	Receiver		*receiver.Receiver
+	Module			*module.Module		// Módulo da função
+	ArgTypes 		[]string			// Tipos dos argumentos de entrada
 	Args 			[]interface{}
-	ReturnTypes		[]string		// Tipos das saídas
+	ReturnTypes		[]string			// Tipos das saídas
 }
 
-type FunctionSignature map[reflect.Value]Function
-
 // Inicializa uma função com base em suas propriedades
-func InitFunction(nome string, is_method bool, receiver_type string, module *module.Module, argTypes, returnTypes []string) (fn *Function, e error) {
-	if nome == "" || module == nil {
-		e = errors.New("Impossível inicializar uma função com atributos nulos")
-
-		return nil, e
-	}
-
+func InitFunction(nome string, is_method bool, receiver_type *receiver.Receiver, module *module.Module, argTypes, returnTypes []string) (fn *Function) {
 	fn = &Function{
 		Name: nome,
 		IsMethod: is_method,
-		ReceiverType: receiver_type,
+		Receiver: receiver_type,
 		Module: module,
 		ArgTypes: argTypes,
 		ReturnTypes: returnTypes,
 	}
 
-	return fn, nil
+	return fn
 }
 
-func GetArgsTypes(f interface{}) ([]reflect.Type, error) {
-	func_type := reflect.TypeOf(f)
+func GetFunction(fn any) *Function {
+	fn_value := reflect.ValueOf(fn)
+	fn_type := fn_value.Type()
+	fn_ptr := fn_value.Pointer()
+	fn_info := runtime.FuncForPC(fn_ptr)
 
-	if func_type.Kind() != reflect.Func {
-		return nil, errors.New(fmt.Sprintf("O argumento f precisa ser uma função. Recebeu: %v", func_type.Kind()))
+	var arg_types, return_types []string
+	is_method := false
+	name := fn_info.Name()
+	for i := 0; i < fn_type.NumIn(); i++ {
+		if (i == 0 && fn_type.In(0).Kind() == reflect.Struct) {
+			is_method = true
+		} else {
+			arg_types = append(arg_types, fn_type.In(i).String())
+		}
 	}
 
-	var arg_types []reflect.Type
-
-	for i := 0; i < func_type.NumIn(); i++ {
-		arg_type := func_type.In(i)
-		arg_types = append(arg_types, arg_type)
+	for i := 0; i < fn_type.NumOut(); i++ {
+		return_types = append(return_types, fn_type.Out(i).String())
 	}
 
-	return arg_types, nil
+	function := InitFunction(name, is_method, nil, nil, arg_types, return_types)
+	function.Signature = fn_value
+
+	return function
 }
 
-func GetFunctionReturnType(f interface{}) (returnTypes []reflect.Type, e error) {
-	funcType := reflect.TypeOf(f)
 
-	if funcType.Kind() != reflect.Func {
-		e = errors.New("Argumento f deveria ser uma função")
-		return nil, e
-	}
-
-	for i := 0; i < funcType.NumOut(); i++ {
-		returnTypes = append(returnTypes, funcType.Out(i))
-	}
-
-	return returnTypes, nil;
-}
-
-// Get the functions signatures from a given module. Note that it does not include methods, eg functions declared for a struct/type.
-func GetFunctionSignatures(mod *module.Module) (signatures map[string]string, e error) {
-	signatures = make(map[string]string)
-
-	for _, mod_path := range mod.Files {
-		file, err := os.Open(mod_path)
-
-		if err != nil {
-			e = errors.New(fmt.Sprintf("Erro ao abrir arquivo: %v", err))
-
-			return nil, e
-		}
-		defer file.Close()
-
-		file_set := token.NewFileSet()
-
-		node, err := parser.ParseFile(file_set, mod_path, file, parser.AllErrors)
-
-		if err != nil {
-			e = errors.New(fmt.Sprintf("Erro ao analisar o arquivo %v: %v", mod_path, err))
-
-			return nil, e
-		}
-
-		conf := types.Config{Importer: importer.Default()}
-		info := &types.Info{
-			Types: make(map[ast.Expr]types.TypeAndValue),
-			Defs: make(map[*ast.Ident]types.Object),
-		}
-
-		if err != nil {
-			e = errors.New(fmt.Sprintf("Erro ao analisar os tipos do arquivo %v: %v\n", mod_path, err))
-		}
-		
-		_, err = conf.Check(mod_path, file_set, []*ast.File{node}, info)
-		if err != nil {
-			fmt.Printf("Erro ao verificar tipos: %v\n", err)
-			return
-		}
-
-		ast.Inspect(node, func(n ast.Node) bool {
-			if f, ok := n.(*ast.FuncDecl); ok {
-				func_name := f.Name.Name
-
-				if obj, ok := info.Defs[f.Name].(*types.Func); ok {
-					signature := obj.Type().String()
-					signatures[func_name] = signature
-				}
-			}
-			return true
-		})
-	}
-
-	return signatures, nil
-}
-
-func GetFunctionsFromModule(mod *module.Module) (functions []*Function, e error) {
+func GetFunctionsInformation(mod *module.Module, fns_map map[string]any) (functions []*Function, e error) {
 	for _, mod_path := range mod.Files {
 		file, err := os.Open(mod_path)
 
@@ -196,11 +132,35 @@ func GetFunctionsFromModule(mod *module.Module) (functions []*Function, e error)
 					}
 
 					if f.Recv != nil {
-						receiver_type := info.TypeOf(f.Recv.List[0].Type)
-						fn, _ := InitFunction(f.Name.Name, true, receiver_type.String(), mod, params, returns)
+						var rcvr *receiver.Receiver
+
+						rcvs, _ := receiver.GetReceivers(mod)
+						receiver_name := ""
+
+						for _, field := range f.Recv.List {
+							switch expr := field.Type.(type) {
+								case *ast.StarExpr: // Ponteiro
+									if ident, ok := expr.X.(*ast.Ident); ok {
+										receiver_name = ident.Name
+									}
+								case *ast.Ident: // Não é ponteiro
+									receiver_name = expr.Name
+							}
+						}
+
+						for _, rcv := range rcvs {
+							if rcv.Name == receiver_name {
+								rcvr = rcv
+								break
+							}
+						}
+
+						receiver.SetAttrValues(rcvr)
+
+						fn := InitFunction(f.Name.Name, true, rcvr, mod, params, returns)
 						functions = append(functions, fn)
 					} else {
-						fn, _ := InitFunction(f.Name.Name, false, "", mod, params, returns)
+						fn := InitFunction(f.Name.Name, false, nil, mod, params, returns)
 						functions = append(functions, fn)
 					}
 				}
@@ -216,21 +176,25 @@ func SetFuncArgs(fn *Function) {
 	var value interface{}
 
 	for _, tp := range fn.ArgTypes {
-		fmt.Println(tp)
 		if tp == "float64" {
-			value, _ = Float64Generator(1)
+			value, _ = utils.Float64Generator()
 		} else if (tp == "float32") {
-			value, _ = Float32Generator(1)
+			value, _ = utils.Float32Generator()
 		} else if (tp == "int64") {
-			value, _ = Int64Generator(1)
+			value, _ = utils.Int64Generator()
 		} else if (tp == "int32") {
-			value, _ = Int32Generator(1)
+			value, _ = utils.Int32Generator()
 		}
 		args = append(args, value)
 	}
 
-	for _, arg := range args {
-		fmt.Println(arg)
-	}
 	fn.Args = args
+}
+
+func ArgToReflectValue(args []interface{}) (r_values []reflect.Value) {
+	for _, arg := range args {
+		r_values = append(r_values, reflect.ValueOf(arg))
+	}
+
+	return r_values
 }
