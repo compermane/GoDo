@@ -1,87 +1,135 @@
+// Package for function receivers
+
 package receiver
 
 import (
-	"errors"
 	"fmt"
-	"go/ast"
-	"go/parser"
-	"go/printer"
-	"go/token"
-	"os"
-	"strings"
+	"reflect"
 
-	"github.com/compermane/ic-go/pkg/domain/module"
 	"github.com/compermane/ic-go/pkg/utils"
 )
 
 type Receiver struct {
-	Module		*module.Module
+	Receiver    any
 	Name		string
+	MethodNames	[]string
 	AttrNames	[]string
-	AttrTypes	[]string
-	AttrValues	[]interface{}
+	AttrTypes	[]reflect.Type
+	AttrValues	[]any
+	IsStar		bool
 }
 
-func InitReceiver(mod *module.Module, name string, attr_names, attr_types []string) *Receiver {
+func InitReceiver(rcv any, name string, method_names, attr_names []string, attr_types []reflect.Type, is_star bool) *Receiver {
 	return &Receiver{
-		Module: mod,
+		Receiver: rcv,
 		Name: name,
+		MethodNames: method_names,
 		AttrNames: attr_names,
 		AttrTypes: attr_types,
+		IsStar: is_star,
 	}
 }
 
-func GetReceivers(mod *module.Module) (receivers []*Receiver, e error) {
-	for _, file_path := range mod.Files {
-		var attr_names, attr_types []string
+func (rcv *Receiver) SetReceiverValues() {
+	v := reflect.ValueOf(rcv.Receiver)
 
-		file, err := os.Open(file_path)
-
-		if err != nil {
-			e = errors.New(fmt.Sprintf("Erro ao abrir arquivo: %v", err))
-
-			return nil, e
-		}
-		defer file.Close()
-
-		file_set := token.NewFileSet()
-
-		node, err := parser.ParseFile(file_set, file_path, file, parser.AllErrors)
-
-		if err != nil {
-			e = errors.New(fmt.Sprintf("Erro ao analisar o arquivo %v: %v", file_path, err))
-
-			return nil, e
-		}
-
-		ast.Inspect(node, func(n ast.Node) bool {
-			if gen_decl, ok := n.(*ast.GenDecl); ok {
-				for _, spec := range gen_decl.Specs {
-					if type_spec, ok := spec.(*ast.TypeSpec); ok {
-						if struct_type, ok := type_spec.Type.(*ast.StructType); ok {
-							struct_name := type_spec.Name.Name
-	
-							for _, field := range struct_type.Fields.List {
-								for _, name := range field.Names {
-									attr_names = append(attr_names, name.String())
-									attr_type, err := exprToString(field.Type)
-									if err != nil {
-										panic(err)
-									}
-									attr_types = append(attr_types, attr_type)
-								}
-							}
-
-							receivers = append(receivers, InitReceiver(mod, struct_name, attr_names, attr_types))
-						}
-					}
-				}
-			}
-			return true
-		})
+	if !rcv.IsStar {
+		v = v.Addr()
 	}
 
-	return receivers, nil
+	v = v.Elem()
+
+	for i := 0; i < v.NumField(); i++ {
+		field := v.Field(i)
+
+		var value any
+
+		switch rcv.AttrTypes[i].String() {
+		case "float64":
+			value, _ = utils.Float64Generator()
+		case "float32":
+			value, _ = utils.Float32Generator()
+		case "int":
+			value, _ = utils.IntGenerator()
+		case "int32":
+			value, _ = utils.Int32Generator()
+		case "int64":
+			value, _ = utils.Int64Generator()
+		case "bool":
+			decider, _ := utils.IntGenerator(0, 10000)
+			fmt.Println(decider)
+			value = utils.BooleanGenerator(decider)
+		case "string":
+			lenght, _ := utils.IntGenerator(0, 100000)
+			value = utils.StringGenerator(lenght)
+		}
+
+		rcv.AttrValues = append(rcv.AttrValues, value)
+		field.Set(reflect.ValueOf(value))
+	}
+
+}
+
+func proccess_receiver(struct_type reflect.Type, rcv any) *Receiver {
+	attr_names := make([]string, 0)
+	attr_types := make([]reflect.Type, 0)
+	method_names := make([]string, 0)
+
+	for i := 0; i < struct_type.NumField(); i++ {
+		attr_names = append(attr_names, struct_type.Field(i).Name)
+		attr_types = append(attr_types, struct_type.Field(i).Type)
+	}
+	
+	for i := 0; i < struct_type.NumMethod(); i++ {
+		method_names = append(method_names, struct_type.Method(i).Name)
+	}
+
+	if struct_type.Kind() == reflect.Ptr {
+    	ptr_type := reflect.PtrTo(struct_type)
+    	for i := 0; i < ptr_type.NumMethod(); i++ {
+        	method_names = append(method_names, ptr_type.Method(i).Name)
+    	}
+	}
+
+	return InitReceiver(rcv, struct_type.Name(), method_names, attr_names, attr_types, false)
+}
+
+
+func process_star_receiver(struct_type reflect.Type, rcv any) *Receiver {
+	attr_names := make([]string, 0)
+	attr_types := make([]reflect.Type, 0)
+	method_names := make([]string, 0)
+
+	for i := 0; i < struct_type.Elem().NumField(); i++ {
+		attr_names = append(attr_names, struct_type.Elem().Field(i).Name)
+		attr_types = append(attr_types, struct_type.Elem().Field(i).Type)
+	}
+	
+	for i := 0; i < struct_type.NumMethod(); i++ {
+		method_names = append(method_names, struct_type.Method(i).Name)
+	}
+
+	if struct_type.Kind() == reflect.Ptr {
+    	ptr_type := reflect.PtrTo(struct_type)
+    	for i := 0; i < ptr_type.NumMethod(); i++ {
+        	method_names = append(method_names, ptr_type.Method(i).Name)
+    	}
+	}
+
+	return InitReceiver(rcv, struct_type.Name(), method_names, attr_names, attr_types, true)
+}
+
+func GetReceiver(rcv any) *Receiver {
+	struct_type := reflect.TypeOf(rcv)
+
+	switch struct_type.Kind() {
+	case reflect.Struct:
+		return proccess_receiver(struct_type, rcv)
+	case reflect.Ptr:
+		return process_star_receiver(struct_type, rcv)
+	default:
+		panic("Expected reflect.Struct or reflect.Ptr argument, received " + struct_type.Kind().String())
+	}
 }
 
 func SetAttrValues(rcv *Receiver) {
@@ -89,6 +137,7 @@ func SetAttrValues(rcv *Receiver) {
 	var values []interface{}
 
 	for _, attr := range rcv.AttrTypes {
+		attr := attr.String()
 		if attr == "float64" {
 			value, _ = utils.Float64Generator()
 		} else if (attr == "float32") {
@@ -102,18 +151,4 @@ func SetAttrValues(rcv *Receiver) {
 	}
 
 	rcv.AttrValues = values
-}
-
-// Auxiliar function. Useful in the GetReceivers func. Converts a ast.Expr to a string, which cannot be done naturally
-func exprToString(expr ast.Expr) (str string, e error) {
-	var sb strings.Builder
-
-	err := printer.Fprint(&sb, token.NewFileSet(), expr)
-
-	if err != nil {
-		e = errors.New(fmt.Sprintf("Erro ao converter para string: %v\n", err))
-		return "", e
-	}
-
-	return sb.String(), nil
 }

@@ -56,6 +56,26 @@ func Float32Generator(params ...float32) (value float32, e error) {
 	return value, nil
 }
 
+func IntGenerator(params ...int) (value int, e error) {
+	min := int(0)
+	max := int(1)
+
+	if len(params) == 2 {
+		min = params[0]
+		max = params[1]
+	}
+
+	if max <= min {
+		e = errors.New(fmt.Sprintf("Intervalo inválido: [%v - %v]", min, max))
+		return 0, e
+	}
+
+	rand.Seed(time.Now().UnixNano())
+	value = min + rand.Intn(max-min)
+
+	return value, nil
+}
+
 func Int64Generator(params ...int64) (value int64, e error) {
 	min := int64(0)
 	max := int64(1)
@@ -95,6 +115,23 @@ func Int32Generator(params ...int32) (value int32, e error) {
 	value = min + rand.Int31() * (max - min)
 
 	return value, nil
+}
+
+func StringGenerator(length int) string {
+	const charset = "abcdefghijklmnopqrstuvwxyz" + "ABCDEFGHIJKLMNOPQRSTUVWXYZ" + "0123456789"
+	seed := rand.NewSource(time.Now().UnixNano())
+	r := rand.New(seed)
+
+	result := make([]byte, length) 
+	for  i := range result {
+		result[i] = charset[r.Intn(len(charset))]
+	}
+
+	return string(result)
+}
+
+func BooleanGenerator(decider int) bool {
+	return decider % 2 == 0
 }
 
 func Float64ToReflectValues(args []float64) (values []reflect.Value) {

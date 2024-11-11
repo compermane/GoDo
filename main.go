@@ -1,93 +1,42 @@
 package main
 
 import (
-	"fmt"
-	"reflect"
-
 	geometry "github.com/compermane/ic-go/geometry"
 	executor "github.com/compermane/ic-go/pkg/domain/executor"
-	functions "github.com/compermane/ic-go/pkg/domain/functions"
-	module "github.com/compermane/ic-go/pkg/domain/module"
-	receiver "github.com/compermane/ic-go/pkg/domain/receiver"
+	"github.com/compermane/ic-go/pkg/domain/functions"
+	"github.com/compermane/ic-go/pkg/domain/receiver"
 )
 
-func func_executor() {
-    var fns map[string]any
+func executor_test() {
+    // funcs := []any{geometry.Add, geometry.MinusOne, geometry.InitPoint, geometry.GetLineFromPoints, geometry.PointToLineDistance, 
+                //    geometry.AlwaysPanic, geometry.SumString}
+    funcs := []any{geometry.BoolFunc}
+    rcvs := []any{geometry.Point{}}
 
-    fns["InitPoint"] = geometry.InitPoint
-    fns["Add"] = geometry.Add
-    var args []reflect.Value
-    fn := reflect.ValueOf(geometry.InitPoint)
+    executor.ExecuteFuncs(funcs, rcvs, "baseline1", 67250, 10)
 
-    fmt.Printf("value of: %v\n", reflect.ValueOf(fn))
-    args = append(args, reflect.ValueOf(10.0))
-    args = append(args, reflect.ValueOf(10.0))
-
-    results := fn.Call(args)
-
-    for _, result := range results {
-        fmt.Println(result.Type())
-        fmt.Println(result)
-    }
-}
-
-func info_with_reflect() {
-    fn := geometry.InitPoint
-
-    function := functions.GetFunction(fn)
-
-    fmt.Printf("name: %v\n", function.Name)
-    for _, arg := range function.ArgTypes {
-        fmt.Printf("%v ", arg)
-    }
-    fmt.Println()
-
-    for _, ret := range function.ReturnTypes {
-        fmt.Printf("%v ", ret)
-    }
-
-    functions.SetFuncArgs(function)
-    r_args := functions.ArgToReflectValue(function.Args)
-    results := function.Signature.Call(r_args)
-
-    for _, result := range results {
-        fmt.Println(result)
-    }
+    // executor.PrintFunctions()
+    // executor.PrintNextCandidates()
 }
 
 func receivers_test() {
-    imports := []string{"math", "fmt"}
-    mod, _ := module.InitModule("/home/eugenio/Área de trabalho/Grad/IC/ic-go/geometry/geometry.go",
-    "/home/eugenio/Área de trabalho/Grad/IC/ic-go/geometry", "github.com/compermane/ic-go/geometry", imports)  
+    rcv := receiver.GetReceiver(&geometry.All{})
+    rcv.SetReceiverValues()
 
-    structs, _ := receiver.GetReceivers(mod)
-
-    for _, struct_rcv := range structs {
-        fmt.Printf("Name: %v\n", struct_rcv.Name)
-        for i := 0; i < len(struct_rcv.AttrNames); i++ {
-            fmt.Printf("%v: %v\n", struct_rcv.AttrNames[i], struct_rcv.AttrTypes[i])
-        }
-    }
+    rcv.Print()
 }
 
-func executor_test() {
-    funcs := []any{geometry.InitPoint, geometry.GetLineFromPoints, geometry.Add}
+func functions_test() {
+    // point := geometry.Point{}
+    // fn := {}any[geometry.Add, geo]
+    // fn := functions.GetFunction([geom)
+    fn := functions.GetFunction(geometry.InitPoint)
 
-    executor := executor.InitExecutor(funcs)
-
-    executor.AnalyseFuncs()
-
-    executor.PrintFunctions()
-    executor.PrintNextCandidates()
+    fn.Print()
 }
 
 func main() {
-    // exec_test()
-    // receivers_test()
-    // func_executor()
-    // info_with_reflect(
-    executor_test()
-    // func_info()
-    // func_signatures()
-    // f_utils()
+    // executor_test()
+    receivers_test()
+    // functions_test()
 }

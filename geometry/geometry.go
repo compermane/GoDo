@@ -12,6 +12,16 @@ import (
 	"math"
 )
 
+type All struct {
+	A string;
+	B bool;
+	C int;
+	D int32;
+	E int64;
+	F float32;
+	G float64
+}
+
 type Point struct {
 	X	float64;
 	Y   float64;
@@ -26,6 +36,18 @@ func Add(a, b int) int {
 	return a + b
 }
 
+func MinusOne(a int) int {
+	return a - 1
+}
+
+func SumString(a, b string) string {
+	return a + b
+}
+
+func BoolFunc(a, b, c bool) bool {
+	return a
+}
+
 func InitPoint(x, y float64) (*Point) {
 	point := &Point{
 		x, 
@@ -35,11 +57,18 @@ func InitPoint(x, y float64) (*Point) {
 	return point
 }
 
+func AlwaysPanic() {
+	panic("This is a panic")
+}
+
+func (pointA Point) Bruh() {
+	fmt.Println("BRuh")
+}
 func (pointA *Point) ManhattanDistance(pointB *Point) float64 {
 	return math.Abs(pointA.X - pointB.X) + math.Abs(pointA.Y - pointB.Y)
 }
 
-func (pointA *Point) EuclideanDistance(pointB *Point) float64 {
+func (pointA *Point) EuclideanDistance(pointB *Point, a int) float64 {
 	return math.Sqrt(math.Pow((pointA.X - pointB.X), 2) + math.Pow((pointA.Y - pointA.Y), 2))
 }
 
@@ -50,7 +79,7 @@ func PointToLineDistance(point *Point, line *Line) float64 {
 	return num / dem
 }
 
-func (point *Point) ToString() string {
+func ToString(point *Point) string {
 	return fmt.Sprintf("(%v, %v)", point.X, point.Y)
 }
 
