@@ -3,15 +3,16 @@
 package receiver
 
 import (
-	"fmt"
 	"reflect"
 
+	"github.com/compermane/ic-go/pkg/domain/functions"
 	"github.com/compermane/ic-go/pkg/utils"
 )
 
 type Receiver struct {
 	Receiver    any
 	Name		string
+	Methods		[]*functions.Function
 	MethodNames	[]string
 	AttrNames	[]string
 	AttrTypes	[]reflect.Type
@@ -19,10 +20,11 @@ type Receiver struct {
 	IsStar		bool
 }
 
-func InitReceiver(rcv any, name string, method_names, attr_names []string, attr_types []reflect.Type, is_star bool) *Receiver {
+func InitReceiver(rcv any, name string, methods []*functions.Function, method_names, attr_names []string, attr_types []reflect.Type, is_star bool) *Receiver {
 	return &Receiver{
 		Receiver: rcv,
 		Name: name,
+		Methods: methods,
 		MethodNames: method_names,
 		AttrNames: attr_names,
 		AttrTypes: attr_types,
@@ -57,10 +59,9 @@ func (rcv *Receiver) SetReceiverValues() {
 			value, _ = utils.Int64Generator()
 		case "bool":
 			decider, _ := utils.IntGenerator(0, 10000)
-			fmt.Println(decider)
 			value = utils.BooleanGenerator(decider)
 		case "string":
-			lenght, _ := utils.IntGenerator(0, 100000)
+			lenght, _ := utils.IntGenerator(0, 100)
 			value = utils.StringGenerator(lenght)
 		}
 
@@ -70,7 +71,34 @@ func (rcv *Receiver) SetReceiverValues() {
 
 }
 
+func get_methods_info(struct_type reflect.Type) []*functions.Function {
+	mts := make([]*functions.Function, 0)
+
+	for i := 0; i < struct_type.NumMethod(); i++ {
+		method := struct_type.Method(i)
+		method_type := method.Type
+
+		args := make([]string, 0)
+		returns := make([]string, 0)
+		method_name := method.Name
+
+		for j := 1; j < method_type.NumIn(); j++{
+			args = append(args, method_type.In(j).String())
+		}
+
+		for k := 0; k < method_type.NumOut(); k++ {
+			returns = append(returns, method_type.Out(k).String())
+		}
+
+		mts = append(mts, functions.InitFunction(method_name, struct_type.Name(), args, returns))
+	}
+
+	return mts
+}
+
 func proccess_receiver(struct_type reflect.Type, rcv any) *Receiver {
+	methods := get_methods_info(struct_type)
+	
 	attr_names := make([]string, 0)
 	attr_types := make([]reflect.Type, 0)
 	method_names := make([]string, 0)
@@ -91,11 +119,13 @@ func proccess_receiver(struct_type reflect.Type, rcv any) *Receiver {
     	}
 	}
 
-	return InitReceiver(rcv, struct_type.Name(), method_names, attr_names, attr_types, false)
+	return InitReceiver(rcv, struct_type.Name(),  methods, method_names, attr_names, attr_types, false)
 }
 
 
 func process_star_receiver(struct_type reflect.Type, rcv any) *Receiver {
+	methods := get_methods_info(struct_type)
+
 	attr_names := make([]string, 0)
 	attr_types := make([]reflect.Type, 0)
 	method_names := make([]string, 0)
@@ -116,7 +146,7 @@ func process_star_receiver(struct_type reflect.Type, rcv any) *Receiver {
     	}
 	}
 
-	return InitReceiver(rcv, struct_type.Name(), method_names, attr_names, attr_types, true)
+	return InitReceiver(rcv, struct_type.Name(), methods, method_names, attr_names, attr_types, true)
 }
 
 func GetReceiver(rcv any) *Receiver {
@@ -131,6 +161,7 @@ func GetReceiver(rcv any) *Receiver {
 		panic("Expected reflect.Struct or reflect.Ptr argument, received " + struct_type.Kind().String())
 	}
 }
+
 
 func SetAttrValues(rcv *Receiver) {
 	var value interface{}

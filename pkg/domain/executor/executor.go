@@ -7,6 +7,7 @@ import (
 
 	functions "github.com/compermane/ic-go/pkg/domain/functions"
 	"github.com/compermane/ic-go/pkg/domain/receiver"
+	"github.com/compermane/ic-go/pkg/utils"
 )
 
 type Executor struct {
@@ -20,7 +21,7 @@ type Executor struct {
 
 /*  Initializes a function executor.
  *  :param fn_lst: List of functions to be executed
- *  :returns: Pointer to a executor
+ *  :returns: Pointer to an executor
  */ 
 func InitExecutor(fn_lst []any, rcvs_lst []any) *Executor {
 	lst := make([]*functions.Function, 0)
@@ -54,35 +55,42 @@ func (exec *Executor) ExecuteFunc(fn *functions.Function, args []reflect.Value) 
 	exec.FunctionsReturns[fn] = fn.Signature.Call(args)
 }
 
-func (exec *Executor) ExecuteFuncWithGivenValues(fn *functions.Function, params []reflect.Value) ([]reflect.Value) {
-	defer func ()  {
+func (exec *Executor) ExecuteMethod(rcv *receiver.Receiver, method_name string) {
+	defer func() {
 		if r := recover(); r != nil {
-			fmt.Printf("Erro durante execução de %v: %v\n", fn.Name, r)
+			fmt.Printf("Exception during execution of method %v: %v\n", method_name, r)
 		}
 	}()
+
+	obj := reflect.ValueOf(rcv.Receiver)
+	method := obj.MethodByName(method_name)
 	
-    for i, param := range params {
-        if !param.IsValid() {
-            panic(fmt.Sprintf("Param %d is invalid (zero Value argument)", i))
-        }
-    }
-	returns := fn.Signature.Call(params)
+	if !method.IsValid() {
+		panic(method_name + " method not found")
+	}
+	
+	method_type := method.Type()
+	num_args := method_type.NumIn()
 
-	return returns
-}
+	args := make([]reflect.Value, num_args)
 
-func (exec *Executor) GetNextCandidates() {
-	for _, fn := range exec.FunctionsList {
-		for _, fn_next := range exec.FunctionsList {
-			for _, ret_type := range fn.ReturnTypes {
-				for _, arg_type := range fn_next.ArgTypes {
-					if ret_type == arg_type && fn.Signature != fn_next.Signature {
-						exec.NextCandidates[fn] = append(exec.NextCandidates[fn], fn_next)
-						break
-					}
-				}
-			}
+	for i := 0; i < num_args; i++ {
+		arg_type := method_type.In(i)
+		switch arg_type.Kind() {
+		case reflect.Int:
+			arg, _ := utils.IntGenerator(-100, 100)
+			args[i] = reflect.ValueOf(arg)
+		case reflect.String:
+			lenght, _ := utils.IntGenerator(1, 100)
+			args[i] = reflect.ValueOf(utils.StringGenerator(lenght))
 		}
+	}
+
+	// Talvez eu precise de mais um atributo em executor para armazenar os métodos. 
+	results := method.Call(args)
+
+	for _, result := range results {
+		fmt.Println(result)
 	}
 }
 
@@ -113,11 +121,11 @@ func ExecuteFuncs(fns, rcvs []any, algorithm string, no_runs, timeout int) {
 
 	switch algorithm {
 	case "baseline1":
-		if no_runs != 0 {
+		if no_runs > 0 {
 			for i := 0; i < no_runs; i++ {
 				exec.SimpleExecution()
 			}
-		} else if timeout != 0 {
+		} else if timeout > 0 {
 			timeout := time.Duration(timeout) * time.Second
 			timer := time.After(timeout)
 			

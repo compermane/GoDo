@@ -5,7 +5,7 @@ import "fmt"
 func (rcv *Receiver) Print() {
 	str_names := ""
 	str_types := ""
-	str_values := "" 
+	str_values := "\n" 
 	mtd_names := ""
 
 	for i := 0; i < len(rcv.AttrNames); i++ {
@@ -28,7 +28,7 @@ func (rcv *Receiver) Print() {
 
 	for i := 0; i < len(rcv.AttrValues); i++ {
 		if len(rcv.AttrValues) > i {
-			str_values = str_values + fmt.Sprintf("%v", rcv.AttrValues[i]) + " "
+			str_values = str_values + fmt.Sprintf("%v: %v",rcv.AttrNames[i], rcv.AttrValues[i]) + "\n"
 		}
 	}
 

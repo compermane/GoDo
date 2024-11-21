@@ -20,11 +20,16 @@ type Function struct {
 	ReturnTypes		[]string			// Tipos das saídas
 }
 
+type Method struct {
+	Name 			string
+	ArgTypes		[]string
+	ReturnTypes		[]string
+}
+
 // Inicializa uma função com base em suas propriedades
-func InitFunction(nome string, is_method bool, receiver_name string, argTypes, returnTypes []string) (fn *Function) {
+func InitFunction(nome string, receiver_name string, argTypes, returnTypes []string) (fn *Function) {
 	fn = &Function{
 		Name: nome,
-		IsMethod: is_method,
 		ReceiverName: receiver_name,
 		ArgTypes: argTypes,
 		ReturnTypes: returnTypes,
@@ -40,7 +45,6 @@ func GetFunction(fn any) *Function {
 	fn_info := runtime.FuncForPC(fn_ptr)
 
 	var arg_types, return_types []string
-	is_method := false
 	full_name := fn_info.Name()
 	
 	parts := strings.Split(full_name, ".")
@@ -49,30 +53,21 @@ func GetFunction(fn any) *Function {
 
 	receiver_name := ""
 	for i := 0; i < fn_type.NumIn(); i++ {
-		if i == 0 && (fn_type.In(0).Kind() == reflect.Struct || fn_type.In(0).Kind() == reflect.Ptr) {
-			is_method = true
-            receiverType := fn_type.In(0)
-
-            if receiverType.Kind() == reflect.Ptr {
-                receiverType = receiverType.Elem()
-            }
-            receiver_name = receiverType.Name() 
+		if fn_type.In(i).Kind() == reflect.Struct {
+			arg_types = append(arg_types, fn_type.In(i).Name())
+		} else if fn_type.In(i).Kind() == reflect.Ptr {
+			arg_types = append(arg_types, fn_type.In(i).Elem().String())
 		} else {
-			if fn_type.In(i).Kind() == reflect.Struct {
-				arg_types = append(arg_types, fn_type.In(i).Name())
-			} else if fn_type.In(i).Kind() == reflect.Ptr {
-				arg_types = append(arg_types, fn_type.In(i).Elem().String())
-			} else {
-				arg_types = append(arg_types, fn_type.In(i).String())
-			}
+			arg_types = append(arg_types, fn_type.In(i).String())
 		}
+		
 	}
 
 	for i := 0; i < fn_type.NumOut(); i++ {
 		return_types = append(return_types, fn_type.Out(i).String())
 	}
 
-	function := InitFunction(name, is_method, receiver_name, arg_types, return_types)
+	function := InitFunction(name,receiver_name, arg_types, return_types)
 	function.Signature = fn_value
 
 	return function

@@ -22,7 +22,10 @@ func executor_test() {
 func receivers_test() {
     rcv := receiver.GetReceiver(&geometry.All{})
     rcv.SetReceiverValues()
+    
+    exec := executor.InitExecutor([]any{}, []any{rcv})
 
+    exec.ExecuteMethod(rcv, "ExampleWithArgs")
     rcv.Print()
 }
 

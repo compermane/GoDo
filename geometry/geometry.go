@@ -32,6 +32,14 @@ type Line struct {
 	b 	float64;
 }
 
+func (all *All) Example() int {
+	return 1
+}
+
+func (all *All) ExampleWithArgs(a int) int {
+	return a
+}
+
 func Add(a, b int) int {
 	return a + b
 }
