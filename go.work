@@ -1,0 +1,8 @@
+go 1.21.3
+
+use (
+	.
+	./testrepos/delve
+	./testrepos/hub
+	./testrepos/cobra
+)

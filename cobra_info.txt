@@ -1,0 +1,495 @@
+testrepos/cobra/bash_completionsV2.go:
+	Functions: 
+	GenBashCompletionFileV2
+	GenBashCompletionV2
+	
+Structs: 
+	
+Methods: 
+	Command.GenBashCompletionFileV2
+	Command.GenBashCompletionV2
+	
+
+----------------------------------------
+testrepos/cobra/doc/util.go:
+	Functions: 
+	Len
+	Swap
+	Less
+	
+Structs: 
+	
+Methods: 
+	
+
+----------------------------------------
+testrepos/cobra/zsh_completions.go:
+	Functions: 
+	GenZshCompletionFile
+	GenZshCompletion
+	GenZshCompletionFileNoDesc
+	GenZshCompletionNoDesc
+	MarkZshCompPositionalArgumentFile
+	MarkZshCompPositionalArgumentWords
+	
+Structs: 
+	
+Methods: 
+	Command.GenZshCompletionFile
+	Command.GenZshCompletion
+	Command.GenZshCompletionFileNoDesc
+	Command.GenZshCompletionNoDesc
+	Command.MarkZshCompPositionalArgumentFile
+	Command.MarkZshCompPositionalArgumentWords
+	
+
+----------------------------------------
+testrepos/cobra/active_help.go:
+	Functions: 
+	AppendActiveHelp
+	GetActiveHelpConfig
+	
+Structs: 
+	
+Methods: 
+	
+
+----------------------------------------
+testrepos/cobra/bash_completions.go:
+	Functions: 
+	GenBashCompletion
+	GenBashCompletionFile
+	
+Structs: 
+	
+Methods: 
+	Command.GenBashCompletion
+	Command.GenBashCompletionFile
+	
+
+----------------------------------------
+testrepos/cobra/cobra.go:
+	Functions: 
+	AddTemplateFunc
+	AddTemplateFuncs
+	OnInitialize
+	OnFinalize
+	Gt
+	Eq
+	CheckErr
+	WriteStringAndCheck
+	
+Structs: 
+	
+Methods: 
+	
+
+----------------------------------------
+testrepos/cobra/command_notwin.go:
+	Functions: 
+	
+Structs: 
+	
+Methods: 
+	
+
+----------------------------------------
+testrepos/cobra/command_win.go:
+	Functions: 
+	
+Structs: 
+	
+Methods: 
+	
+
+----------------------------------------
+testrepos/cobra/fish_completions.go:
+	Functions: 
+	GenFishCompletion
+	GenFishCompletionFile
+	
+Structs: 
+	
+Methods: 
+	Command.GenFishCompletion
+	Command.GenFishCompletionFile
+	
+
+----------------------------------------
+testrepos/cobra/command.go:
+	Functions: 
+	Context
+	SetContext
+	SetArgs
+	SetOutput
+	SetOut
+	SetErr
+	SetIn
+	SetUsageFunc
+	SetUsageTemplate
+	SetFlagErrorFunc
+	SetHelpFunc
+	SetHelpCommand
+	SetHelpCommandGroupID
+	SetCompletionCommandGroupID
+	SetHelpTemplate
+	SetVersionTemplate
+	SetErrPrefix
+	SetGlobalNormalizationFunc
+	OutOrStdout
+	OutOrStderr
+	ErrOrStderr
+	InOrStdin
+	UsageFunc
+	Usage
+	HelpFunc
+	Help
+	UsageString
+	FlagErrorFunc
+	UsagePadding
+	CommandPathPadding
+	NamePadding
+	UsageTemplate
+	HelpTemplate
+	VersionTemplate
+	ErrPrefix
+	Find
+	Traverse
+	SuggestionsFor
+	VisitParents
+	Root
+	ArgsLenAtDash
+	ExecuteContext
+	Execute
+	ExecuteContextC
+	ExecuteC
+	ValidateArgs
+	ValidateRequiredFlags
+	InitDefaultHelpFlag
+	InitDefaultVersionFlag
+	InitDefaultHelpCmd
+	ResetCommands
+	Len
+	Swap
+	Less
+	Commands
+	AddCommand
+	Groups
+	AllChildCommandsHaveGroup
+	ContainsGroup
+	AddGroup
+	RemoveCommand
+	Print
+	Println
+	Printf
+	PrintErr
+	PrintErrln
+	PrintErrf
+	CommandPath
+	DisplayName
+	UseLine
+	DebugFlags
+	Name
+	HasAlias
+	CalledAs
+	NameAndAliases
+	HasExample
+	Runnable
+	HasSubCommands
+	IsAvailableCommand
+	IsAdditionalHelpTopicCommand
+	HasHelpSubCommands
+	HasAvailableSubCommands
+	HasParent
+	GlobalNormalizationFunc
+	Flags
+	LocalNonPersistentFlags
+	LocalFlags
+	InheritedFlags
+	NonInheritedFlags
+	PersistentFlags
+	ResetFlags
+	HasFlags
+	HasPersistentFlags
+	HasLocalFlags
+	HasInheritedFlags
+	HasAvailableFlags
+	HasAvailablePersistentFlags
+	HasAvailableLocalFlags
+	HasAvailableInheritedFlags
+	Flag
+	ParseFlags
+	Parent
+	
+Structs: 
+	Group
+	Command
+	
+Methods: 
+	Command.Context
+	Command.SetContext
+	Command.SetArgs
+	Command.SetOutput
+	Command.SetOut
+	Command.SetErr
+	Command.SetIn
+	Command.SetUsageFunc
+	Command.SetUsageTemplate
+	Command.SetFlagErrorFunc
+	Command.SetHelpFunc
+	Command.SetHelpCommand
+	Command.SetHelpCommandGroupID
+	Command.SetCompletionCommandGroupID
+	Command.SetHelpTemplate
+	Command.SetVersionTemplate
+	Command.SetErrPrefix
+	Command.SetGlobalNormalizationFunc
+	Command.OutOrStdout
+	Command.OutOrStderr
+	Command.ErrOrStderr
+	Command.InOrStdin
+	Command.UsageFunc
+	Command.Usage
+	Command.HelpFunc
+	Command.Help
+	Command.UsageString
+	Command.FlagErrorFunc
+	Command.UsagePadding
+	Command.CommandPathPadding
+	Command.NamePadding
+	Command.UsageTemplate
+	Command.HelpTemplate
+	Command.VersionTemplate
+	Command.ErrPrefix
+	Command.Find
+	Command.Traverse
+	Command.SuggestionsFor
+	Command.VisitParents
+	Command.Root
+	Command.ArgsLenAtDash
+	Command.ExecuteContext
+	Command.Execute
+	Command.ExecuteContextC
+	Command.ExecuteC
+	Command.ValidateArgs
+	Command.ValidateRequiredFlags
+	Command.InitDefaultHelpFlag
+	Command.InitDefaultVersionFlag
+	Command.InitDefaultHelpCmd
+	Command.ResetCommands
+	Command.Commands
+	Command.AddCommand
+	Command.Groups
+	Command.AllChildCommandsHaveGroup
+	Command.ContainsGroup
+	Command.AddGroup
+	Command.RemoveCommand
+	Command.Print
+	Command.Println
+	Command.Printf
+	Command.PrintErr
+	Command.PrintErrln
+	Command.PrintErrf
+	Command.CommandPath
+	Command.DisplayName
+	Command.UseLine
+	Command.DebugFlags
+	Command.Name
+	Command.HasAlias
+	Command.CalledAs
+	Command.NameAndAliases
+	Command.HasExample
+	Command.Runnable
+	Command.HasSubCommands
+	Command.IsAvailableCommand
+	Command.IsAdditionalHelpTopicCommand
+	Command.HasHelpSubCommands
+	Command.HasAvailableSubCommands
+	Command.HasParent
+	Command.GlobalNormalizationFunc
+	Command.Flags
+	Command.LocalNonPersistentFlags
+	Command.LocalFlags
+	Command.InheritedFlags
+	Command.NonInheritedFlags
+	Command.PersistentFlags
+	Command.ResetFlags
+	Command.HasFlags
+	Command.HasPersistentFlags
+	Command.HasLocalFlags
+	Command.HasInheritedFlags
+	Command.HasAvailableFlags
+	Command.HasAvailablePersistentFlags
+	Command.HasAvailableLocalFlags
+	Command.HasAvailableInheritedFlags
+	Command.Flag
+	Command.ParseFlags
+	Command.Parent
+	
+
+----------------------------------------
+testrepos/cobra/completions.go:
+	Functions: 
+	Error
+	NoFileCompletions
+	FixedCompletions
+	RegisterFlagCompletionFunc
+	GetFlagCompletionFunc
+	InitDefaultCompletionCmd
+	CompDebug
+	CompDebugln
+	CompError
+	CompErrorln
+	
+Structs: 
+	CompletionOptions
+	
+Methods: 
+	flagCompError.Error
+	Command.RegisterFlagCompletionFunc
+	Command.GetFlagCompletionFunc
+	Command.InitDefaultCompletionCmd
+	
+
+----------------------------------------
+testrepos/cobra/doc/man_docs.go:
+	Functions: 
+	GenManTree
+	GenManTreeFromOpts
+	GenMan
+	
+Structs: 
+	GenManTreeOptions
+	GenManHeader
+	
+Methods: 
+	
+
+----------------------------------------
+testrepos/cobra/flag_groups.go:
+	Functions: 
+	MarkFlagsRequiredTogether
+	MarkFlagsOneRequired
+	MarkFlagsMutuallyExclusive
+	ValidateFlagGroups
+	
+Structs: 
+	
+Methods: 
+	Command.MarkFlagsRequiredTogether
+	Command.MarkFlagsOneRequired
+	Command.MarkFlagsMutuallyExclusive
+	Command.ValidateFlagGroups
+	
+
+----------------------------------------
+testrepos/cobra/shell_completions.go:
+	Functions: 
+	MarkFlagRequired
+	MarkPersistentFlagRequired
+	MarkFlagRequired
+	MarkFlagFilename
+	MarkFlagCustom
+	MarkPersistentFlagFilename
+	MarkFlagFilename
+	MarkFlagCustom
+	MarkFlagDirname
+	MarkPersistentFlagDirname
+	MarkFlagDirname
+	
+Structs: 
+	
+Methods: 
+	Command.MarkFlagRequired
+	Command.MarkPersistentFlagRequired
+	Command.MarkFlagFilename
+	Command.MarkFlagCustom
+	Command.MarkPersistentFlagFilename
+	Command.MarkFlagDirname
+	Command.MarkPersistentFlagDirname
+	
+
+----------------------------------------
+testrepos/cobra/args.go:
+	Functions: 
+	NoArgs
+	OnlyValidArgs
+	ArbitraryArgs
+	MinimumNArgs
+	MaximumNArgs
+	ExactArgs
+	RangeArgs
+	MatchAll
+	ExactValidArgs
+	
+Structs: 
+	
+Methods: 
+	
+
+----------------------------------------
+testrepos/cobra/doc/md_docs.go:
+	Functions: 
+	GenMarkdown
+	GenMarkdownCustom
+	GenMarkdownTree
+	GenMarkdownTreeCustom
+	
+Structs: 
+	
+Methods: 
+	
+
+----------------------------------------
+testrepos/cobra/doc/rest_docs.go:
+	Functions: 
+	GenReST
+	GenReSTCustom
+	GenReSTTree
+	GenReSTTreeCustom
+	
+Structs: 
+	
+Methods: 
+	
+
+----------------------------------------
+testrepos/cobra/doc/yaml_docs.go:
+	Functions: 
+	GenYamlTree
+	GenYamlTreeCustom
+	GenYaml
+	GenYamlCustom
+	
+Structs: 
+	
+Methods: 
+	
+
+----------------------------------------
+testrepos/cobra/godo/main.go:
+	Functions: 
+	
+Structs: 
+	
+Methods: 
+	
+
+----------------------------------------
+testrepos/cobra/powershell_completions.go:
+	Functions: 
+	GenPowerShellCompletionFile
+	GenPowerShellCompletion
+	GenPowerShellCompletionFileWithDesc
+	GenPowerShellCompletionWithDesc
+	
+Structs: 
+	
+Methods: 
+	Command.GenPowerShellCompletionFile
+	Command.GenPowerShellCompletion
+	Command.GenPowerShellCompletionFileWithDesc
+	Command.GenPowerShellCompletionWithDesc
+	
+
+----------------------------------------

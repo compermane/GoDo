@@ -18,7 +18,7 @@ func (fn *Function) Print() {
 	str_ret_types := ""
 
 	for i := range fn.ArgTypes {
-		str_arg_types = str_arg_types + fn.ArgTypes[i] + ", "
+		str_arg_types = str_arg_types + fn.ArgTypesString[i] + ", "
 
 		if i < len(fn.Args) {
 			str_args = str_args + fmt.Sprintf("%v, ", str_args[i])

@@ -32,11 +32,18 @@ type Line struct {
 	b 	float64;
 }
 
+func Example(all Point) float64 {
+	return all.X + all.Y
+}
+
 func (all *All) Example() int {
 	return 1
 }
 
-func (all *All) ExampleWithArgs(a int) int {
+func (all *All) ExampleWithArgs(a int, b string, c bool) int {
+	if c {
+		fmt.Println(b)
+	}
 	return a
 }
 

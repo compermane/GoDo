@@ -17,8 +17,8 @@ func Float64Generator(params ...float64) (value float64, e error) {
 	max := 1.0
 
 	if len(params) == 3 {
-		min = params[0]
-		max = params[1]
+		min = params[1]
+		max = params[2]
 	}
 
 	if max <= min {
@@ -117,6 +117,37 @@ func Int32Generator(params ...int32) (value int32, e error) {
 	return value, nil
 }
 
+func Int16Generator(params ...int) int16 {
+	min := int16(0)
+	max := int16(1)
+
+	if len(params) == 3 {
+		min = int16(params[1])
+		max = int16(params[2])
+	}
+
+	rand.Seed(time.Now().UnixNano())
+	value := min + int16(rand.Int()) * (max - min)
+
+	return value
+}
+
+func Int8Generator(params ...int) int8 {
+	min := int8(0)
+	max := int8(1)
+
+	if len(params) == 3 {
+		min = int8(params[1])
+		max = int8(params[2])
+	}
+
+	rand.Seed(time.Now().UnixNano())
+	value := min + int8(rand.Int()) * (max - min)
+
+	return value
+}
+
+
 func StringGenerator(length int) string {
 	const charset = "abcdefghijklmnopqrstuvwxyz" + "ABCDEFGHIJKLMNOPQRSTUVWXYZ" + "0123456789"
 	seed := rand.NewSource(time.Now().UnixNano())
@@ -141,4 +172,80 @@ func Float64ToReflectValues(args []float64) (values []reflect.Value) {
 	}
 
 	return values
+}
+
+// Others
+func UintGenerator(params ...int) uint {
+	min := uint(0)
+	max := uint(1)
+
+	if len(params) == 3 {
+		min = uint(params[1])
+		max = uint(params[2])
+	}
+
+	rand.Seed(time.Now().UnixNano())
+	value := min + uint(rand.Uint64()) * (max - min)
+
+	return value
+}
+
+func Uint64Generator(params ...int) uint64 {
+	min := uint64(0)
+	max := uint64(1)
+
+	if len(params) == 3 {
+		min = uint64(params[1])
+		max = uint64(params[2])
+	}
+
+	rand.Seed(time.Now().UnixNano())
+	value := min + uint64(rand.Uint64()) * (max - min)
+
+	return value
+}
+
+func Uint32Generator(params ...int) uint32 {
+	min := uint32(0)
+	max := uint32(1)
+
+	if len(params) == 3 {
+		min = uint32(params[1])
+		max = uint32(params[2])
+	}
+
+	rand.Seed(time.Now().UnixNano())
+	value := min + uint32(rand.Uint32()) * (max - min)
+
+	return value
+}
+
+func Uint16Generator(params ...int) uint16 {
+	min := uint16(0)
+	max := uint16(1)
+
+	if len(params) == 3 {
+		min = uint16(params[1])
+		max = uint16(params[2])
+	}
+
+	rand.Seed(time.Now().UnixNano())
+	value := min + uint16(rand.Uint32()) * (max - min)
+
+	return value
+}
+
+func Uint8Generator(params ...int) uint8 {
+	min := uint8(0)
+	max := uint8(1)
+
+	if len(params) == 3 {
+		min = uint8(params[1])
+		max = uint8(params[2])
+	}
+
+	rand.Seed(time.Now().UnixNano())
+	value := min + uint8(rand.Uint32()) * (max - min)
+
+	return value
 }

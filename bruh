@@ -1,0 +1,5 @@
+doc.GenYamlTree, doc.GenYamlTreeCustom, doc.GenYaml, doc.GenYamlCustom, cobra.NoFileCompletions, cobra.FixedCompletions, cobra.CompDebug, cobra.CompDebugln, cobra.CompError, 
+cobra.CompErrorln, cobra.MarkFlagRequired, cobra.MarkFlagFilename, cobra.MarkFlagCustom, cobra.MarkFlagDirname, cobra.AppendActiveHelp, cobra.GetActiveHelpConfig, cobra.NoArgs, cobra.OnlyValidArgs, cobra.ArbitraryArgs, cobra.MinimumNArgs, cobra.MaximumNArgs, 
+cobra.ExactArgs, cobra.RangeArgs, cobra.MatchAll, cobra.ExactValidArgs, 
+cobra.AddTemplateFunc, cobra.AddTemplateFuncs, cobra.OnInitialize, cobra.OnFinalize, cobra.Gt, 
+cobra.Eq, cobra.CheckErr, cobra.WriteStringAndCheck, doc.GenManTree, doc.GenManTreeFromOpts, doc.GenMan, doc.GenMarkdown, doc.GenMarkdownCustom, doc.GenMarkdownTree, doc.GenMarkdownTreeCustom, doc.GenReST, doc.GenReSTCustom, doc.GenReSTTree, doc.GenReSTTreeCustom, 

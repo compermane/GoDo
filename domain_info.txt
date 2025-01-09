@@ -1,0 +1,114 @@
+pkg/domain/executor/executor.go:
+	Functions: 
+	InitExecutor
+	ExecuteFunc
+	ExecuteMethod
+	SimpleExecution
+	SetFuncArgs
+	ExecuteFuncs
+	
+Structs: 
+	Executor
+	
+Methods: 
+	Executor.ExecuteFunc
+	Executor.ExecuteMethod
+	Executor.SimpleExecution
+	Executor.SetFuncArgs
+	
+
+----------------------------------------
+pkg/domain/executor/executor_utils.go:
+	Functions: 
+	PrintFunctions
+	PrintNextCandidates
+	GetFunctionReturns
+	
+Structs: 
+	
+Methods: 
+	Executor.PrintFunctions
+	Executor.PrintNextCandidates
+	Executor.GetFunctionReturns
+	
+
+----------------------------------------
+pkg/domain/functions/functions.go:
+	Functions: 
+	InitFunction
+	GetFunction
+	
+Structs: 
+	Function
+	Method
+	
+Methods: 
+	
+
+----------------------------------------
+pkg/domain/functions/functions_test.go:
+	Functions: 
+	
+Structs: 
+	
+Methods: 
+	
+
+----------------------------------------
+pkg/domain/receiver/receiver_utils.go:
+	Functions: 
+	Print
+	
+Structs: 
+	
+Methods: 
+	Receiver.Print
+	
+
+----------------------------------------
+pkg/domain/functions/functions_utils.go:
+	Functions: 
+	Print
+	
+Structs: 
+	
+Methods: 
+	Function.Print
+	
+
+----------------------------------------
+pkg/domain/module/module.go:
+	Functions: 
+	InitModule
+	
+Structs: 
+	Module
+	
+Methods: 
+	
+
+----------------------------------------
+pkg/domain/module/module_test.go:
+	Functions: 
+	TestInit
+	
+Structs: 
+	
+Methods: 
+	
+
+----------------------------------------
+pkg/domain/receiver/receiver.go:
+	Functions: 
+	InitReceiver
+	SetReceiverValues
+	GetReceiver
+	
+Structs: 
+	Receiver
+	
+Methods: 
+	Receiver.SetReceiverValues
+	
+
+----------------------------------------

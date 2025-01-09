@@ -6,17 +6,17 @@ import (
 	"reflect"
 	"runtime"
 	"strings"
-
-	utils "github.com/compermane/ic-go/pkg/utils"
 )
 
 type Function struct {
 	Name			string				// Nome da função
 	Signature 		reflect.Value		// Função propriamente dita a ser executada
 	IsMethod		bool				// Se é um método, isto é, se existe um receiver para a função
+	HasVariadic		bool				// True se o último argumento for variádico, false caso contrário
 	ReceiverName	string		
-	ArgTypes 		[]string			// Tipos dos argumentos de entrada
-	Args 			[]interface{}
+	ArgTypesString 	[]string			// Tipos dos argumentos de entrada
+	ArgTypes		[]reflect.Type
+	Args 			[]any
 	ReturnTypes		[]string			// Tipos das saídas
 }
 
@@ -27,11 +27,13 @@ type Method struct {
 }
 
 // Inicializa uma função com base em suas propriedades
-func InitFunction(nome string, receiver_name string, argTypes, returnTypes []string) (fn *Function) {
+func InitFunction(nome string, receiver_name string, has_variadic bool, arg_types []reflect.Type, arg_types_string, returnTypes []string) (fn *Function) {
 	fn = &Function{
 		Name: nome,
+		HasVariadic: has_variadic,
 		ReceiverName: receiver_name,
-		ArgTypes: argTypes,
+		ArgTypesString: arg_types_string,
+		ArgTypes: arg_types,
 		ReturnTypes: returnTypes,
 	}
 
@@ -44,7 +46,9 @@ func GetFunction(fn any) *Function {
 	fn_ptr := fn_value.Pointer()
 	fn_info := runtime.FuncForPC(fn_ptr)
 
-	var arg_types, return_types []string
+	var arg_types_string, return_types []string
+	var arg_types []reflect.Type
+	var is_variadic bool = false
 	full_name := fn_info.Name()
 	
 	parts := strings.Split(full_name, ".")
@@ -53,12 +57,20 @@ func GetFunction(fn any) *Function {
 
 	receiver_name := ""
 	for i := 0; i < fn_type.NumIn(); i++ {
+		if i == fn_type.NumIn() - 1 {
+			if fn_type.IsVariadic() {
+				is_variadic = true
+			}
+		}
 		if fn_type.In(i).Kind() == reflect.Struct {
-			arg_types = append(arg_types, fn_type.In(i).Name())
+			arg_types_string = append(arg_types_string, fn_type.In(i).Name())
+			arg_types = append(arg_types, fn_type.In(i))
 		} else if fn_type.In(i).Kind() == reflect.Ptr {
-			arg_types = append(arg_types, fn_type.In(i).Elem().String())
+			arg_types_string = append(arg_types_string, fn_type.In(i).Elem().String())
+			arg_types = append(arg_types, fn_type.In(i))
 		} else {
-			arg_types = append(arg_types, fn_type.In(i).String())
+			arg_types_string = append(arg_types_string, fn_type.In(i).String())
+			arg_types = append(arg_types, fn_type.In(i))
 		}
 		
 	}
@@ -67,44 +79,9 @@ func GetFunction(fn any) *Function {
 		return_types = append(return_types, fn_type.Out(i).String())
 	}
 
-	function := InitFunction(name,receiver_name, arg_types, return_types)
+	function := InitFunction(name, receiver_name, is_variadic, arg_types, arg_types_string, return_types)
 	function.Signature = fn_value
 
+
 	return function
-}
-
-func SetFuncArgs(fn *Function) {
-	var args []interface{}
-	var value interface{}
-
-	for _, tp := range fn.ArgTypes {
-		if tp == "float64" {
-			value, _ = utils.Float64Generator()
-		} else if (tp == "float32") {
-			value, _ = utils.Float32Generator()
-		} else if (tp == "int") {
-			value, _ = utils.IntGenerator()
-		} else if (tp == "int64") {
-			value, _ = utils.Int64Generator()
-		} else if (tp == "int32") {
-			value, _ = utils.Int32Generator()
-		} else if (tp == "string") {
-			lenght, _ := utils.IntGenerator(1, 10)
-			value = utils.StringGenerator(lenght)
-		} else if (tp == "bool") {
-			decider, _ := utils.IntGenerator(0, 10)
-			value = utils.BooleanGenerator(decider)
-		}
-		args = append(args, value)
-	}
-
-	fn.Args = args
-}
-
-func ArgToReflectValue(args []interface{}) (r_values []reflect.Value) {
-	for _, arg := range args {
-		r_values = append(r_values, reflect.ValueOf(arg))
-	}
-
-	return r_values
 }
