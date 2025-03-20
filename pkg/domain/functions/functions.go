@@ -13,10 +13,9 @@ type Function struct {
 	Signature 		reflect.Value		// Função propriamente dita a ser executada
 	IsMethod		bool				// Se é um método, isto é, se existe um receiver para a função
 	HasVariadic		bool				// True se o último argumento for variádico, false caso contrário
-	ReceiverName	string		
-	ArgTypesString 	[]string			// Tipos dos argumentos de entrada
-	ArgTypes		[]reflect.Type
-	Args 			[]any
+	ReceiverName	string				// Nome do receiver, se tiver. Pode ser ""
+	ArgTypesString 	[]string			// Tipos dos argumentos de entrada em string
+	ArgTypes		[]reflect.Type      // Tipos dos argumentos de entrada em reflect.Type
 	ReturnTypes		[]string			// Tipos das saídas
 }
 

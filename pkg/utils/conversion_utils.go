@@ -59,3 +59,16 @@ func AnySliceToStringSlice(arg []any) (str_values []string) {
 
 	return str_values
 }
+
+func ConvertTypeToAlias(value any, alias_type reflect.Type) any {
+	val := reflect.ValueOf(value)
+
+	if !val.Type().ConvertibleTo(alias_type) {
+		return nil 
+	}
+
+	converted := reflect.New(alias_type).Elem()
+	converted.Set(val.Convert(alias_type))
+
+	return converted
+}
