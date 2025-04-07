@@ -3,15 +3,19 @@ package sequence
 import (
 	"fmt"
 	"math/rand"
+	"reflect"
+	"time"
 
 	"github.com/compermane/ic-go/pkg/domain/receiver"
 	"github.com/compermane/ic-go/pkg/domain/testfunction"
 )
 
 type Sequence struct {
-	SequenceID 	uint64
-	Functions 	[]*testfunction.TestFunction
-	Receivers 	[]*receiver.Receiver
+	SequenceID 		uint64
+	Functions 		[]*testfunction.TestFunction
+	Receivers 		[]*receiver.Receiver
+	ReturnedValues	map[string][]reflect.Value
+	ExtensibleFlag  []bool
 }
 
 /* Creates a new sequence.
@@ -27,16 +31,23 @@ func NewSequence(functions []*testfunction.TestFunction, receivers []*receiver.R
 			str += "(" + fmt.Sprintf("%+v", arg_value) + ")"
 		}
 	}
-	fmt.Println(str)
+
 	sq_id := create_id(str)
-	fmt.Println(sq_id)
+
+	returned_values := make(map[string][]reflect.Value, 0)
+
 	return &Sequence{
 		SequenceID: sq_id,
 		Functions: functions,
 		Receivers: receivers,
+		ReturnedValues: returned_values,
 	}
 }
 
+/* Choses a random sequence.
+ * :param seqs: List of sequences
+ * :returns: Selected sequence
+ */
 func ChooseRandom(seqs []*Sequence) *Sequence {
 	return seqs[rand.Intn(len(seqs))]
 }
@@ -74,12 +85,71 @@ func VerifyDuplicate(seqs []*Sequence) bool {
 
 /* Concatenates one sequence to another.
  * :param seq: sequence concatenated to the sq receiver
- * :returns: none
+ * :returns: new sequence
  */
-func (sq *Sequence) AppendSequence(seq *Sequence) {
-	sq.Functions  = append(sq.Functions, seq.Functions...)
-	sq.Receivers  = append(sq.Receivers, seq.Receivers...)
-	sq.SequenceID = update_id(sq, seq)
+func (sq *Sequence) AppendSequence(seq *Sequence) *Sequence {
+	newSeq := &Sequence{
+		Functions: append([]*testfunction.TestFunction{}, sq.Functions...),
+		Receivers: append([]*receiver.Receiver{}, sq.Receivers...),
+		ReturnedValues: make(map[string][]reflect.Value),
+	}
+
+	for chave, valores := range sq.ReturnedValues {
+		newSlice := make([]reflect.Value, len(valores))
+		copy(newSlice, valores)
+		newSeq.ReturnedValues[chave] = newSlice
+	}
+
+	newSeq.Functions = append(newSeq.Functions, seq.Functions...)
+	newSeq.Receivers = append(newSeq.Receivers, seq.Receivers...)
+
+	// Atualiza o ID da sequência, se necessário, usando a nova sequência como base
+	newSeq.SequenceID = update_id(newSeq, seq)
+
+	// Aqui você pode, opcionalmente, ajustar ou limpar outros estados que não deseja herdar
+
+	return newSeq
+}
+
+func (sq *Sequence) AppendReturnedValue(return_type string, value reflect.Value) {
+	_, exist := sq.ReturnedValues[return_type]
+
+	if exist {
+		sq.ReturnedValues[return_type] = append(sq.ReturnedValues[return_type], value)
+	} else {
+		sq.ReturnedValues[return_type] = make([]reflect.Value, 0)
+		sq.ReturnedValues[return_type] = append(sq.ReturnedValues[return_type], value)
+	}
+}
+
+func (sq *Sequence) GetRandomReturnedValue(value_type string) (reflect.Value, bool) {
+	val, ok := sq.ReturnedValues[value_type]
+
+	if !ok {
+		return reflect.Zero(reflect.TypeOf((*any)(nil))), false
+	}
+
+	slice := reflect.ValueOf(val)
+	if slice.Kind() != reflect.Slice {
+		return reflect.Zero(reflect.TypeOf((*any)(nil))), false
+	}
+	if slice.Len() == 0 {
+		return reflect.Zero(reflect.TypeOf((*any)(nil))), false
+	}
+
+	source := rand.NewSource(time.Now().UnixNano())
+	rng	   := rand.New(source)
+
+	random_index := rng.Intn(slice.Len())
+
+	result := slice.Index(random_index)
+
+	if result.Type() == reflect.TypeOf(reflect.Value{}) {
+		result = result.Interface().(reflect.Value)
+	}
+
+	return result, true
+	
 }
 
 /* Represents sq sequence functions as a string.

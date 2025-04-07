@@ -1,7 +1,9 @@
 package testfunction
 
 import (
+	"math/rand"
 	"reflect"
+	"time"
 
 	"github.com/compermane/ic-go/pkg/domain/functions"
 )
@@ -22,4 +24,17 @@ func NewTestFunction(fn *functions.Function, args []reflect.Value) *TestFunction
 		false,
 		nil,
 	}
+}
+
+func (tf *TestFunction) SelectRandomArg() string {
+	if len(tf.ArgTypes) == 0 {
+		return ""
+	}
+	
+	source := rand.NewSource(time.Now().UnixNano())
+	rng	   := rand.New(source)
+
+	random_index := rng.Intn(len(tf.ArgTypes))
+
+	return tf.ArgTypes[random_index].String()
 }

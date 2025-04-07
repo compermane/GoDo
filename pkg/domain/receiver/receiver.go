@@ -3,6 +3,7 @@
 package receiver
 
 import (
+	"fmt"
 	"reflect"
 
 	"github.com/compermane/ic-go/pkg/domain/functions"
@@ -267,7 +268,7 @@ func process_star_receiver(struct_type reflect.Type, rcv any) *Receiver {
 
 func GetReceiver(rcv any) *Receiver {
 	struct_type := reflect.TypeOf(rcv)
-
+	fmt.Println(struct_type.Name())
 	switch struct_type.Kind() {
 	case reflect.Struct:
 		return proccess_receiver(struct_type, rcv)

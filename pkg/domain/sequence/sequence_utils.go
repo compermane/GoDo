@@ -30,8 +30,6 @@ func update_id(sq1, sq2 *Sequence) uint64 {
 		}
 	}
 
-	fmt.Printf("appending id: %v\n", str)
-
 	return create_id(str)
 }
 
@@ -39,5 +37,6 @@ func verify_equal_sequences(sq1, sq2 *Sequence) bool {
 	if sq1 == nil || sq2 == nil {
 		return false
 	}
+	
 	return sq1.SequenceID == sq2.SequenceID
 }

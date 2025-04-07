@@ -18,31 +18,33 @@ func ArgToReflectValue(args []interface{}, is_variadic bool, fn *functions.Funct
 			// Caso em que o argumento não se trata de uma slice nem de um array
 			r_values = append(r_values, value)
 		} else {
-			example_element := value.Index(0).Interface()
+			if value.Len() > 0 {
+				example_element := value.Index(0).Interface()
 
-			// fmt.Println(reflect.TypeOf(example_element).String())
-			switch reflect.TypeOf(example_element).String() {
-			case "string":
-				if i == len(args) - 1 && is_variadic {
-					for i := 0; i < value.Len(); i++ {
-						r_values = append(r_values, reflect.ValueOf(value.Index(i).Interface()))
+				// fmt.Println(reflect.TypeOf(example_element).String())
+				switch reflect.TypeOf(example_element).String() {
+				case "string":
+					if i == len(args) - 1 && is_variadic {
+						for i := 0; i < value.Len(); i++ {
+							r_values = append(r_values, reflect.ValueOf(value.Index(i).Interface()))
+						}
+					} else {
+						r_array := make([]string, value.Len())
+						
+						for i := 0; i < value.Len(); i++ {
+							v := value.Index(i).Interface()
+							str, _ := v.(string)
+							r_array[i] = str
+						}
+						
+						r_values = append(r_values, reflect.ValueOf(r_array))
 					}
-				} else {
-					r_array := make([]string, value.Len())
-					
-					for i := 0; i < value.Len(); i++ {
-						v := value.Index(i).Interface()
-						str, _ := v.(string)
-						r_array[i] = str
-					}
-					
-					r_values = append(r_values, reflect.ValueOf(r_array))
+				case "int":
+					// r_array := make([]int, 0)
+				default:
+					// r_array := make([]any, 0)
+
 				}
-			case "int":
-				// r_array := make([]int, 0)
-			default:
-				// r_array := make([]any, 0)
-
 			}
 		}
 	}

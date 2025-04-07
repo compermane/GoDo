@@ -29,6 +29,8 @@ func Float64Generator(params ...float64) (value float64, e error) {
 	rand.Seed(time.Now().UnixNano())
 	value = min + rand.Float64() * (max - min)
 
+	time.Sleep(1 * time.Millisecond)
+
 	return value, nil
 }
 
@@ -53,6 +55,8 @@ func Float32Generator(params ...float32) (value float32, e error) {
 	rand.Seed(time.Now().UnixNano())
 	value = min + rand.Float32() * (max - min)
 		
+	time.Sleep(1 * time.Millisecond)
+
 	return value, nil
 }
 
@@ -66,12 +70,15 @@ func IntGenerator(params ...int) (value int, e error) {
 	}
 
 	if max <= min {
+		fmt.Printf("%v %v\n", max, min)
 		e = errors.New(fmt.Sprintf("Intervalo inválido: [%v - %v]", min, max))
 		return 0, e
 	}
 
 	rand.Seed(time.Now().UnixNano())
 	value = min + rand.Intn(max-min)
+
+	time.Sleep(1 * time.Millisecond)
 
 	return value, nil
 }
@@ -93,6 +100,7 @@ func Int64Generator(params ...int64) (value int64, e error) {
 	rand.Seed(time.Now().UnixNano())
 	value = min + rand.Int63() * (max - min)
 
+	time.Sleep(1 * time.Millisecond)
 
 	return value, nil
 }
@@ -114,6 +122,8 @@ func Int32Generator(params ...int32) (value int32, e error) {
 	rand.Seed(time.Now().UnixNano())
 	value = min + rand.Int31() * (max - min)
 
+	time.Sleep(1 * time.Millisecond)
+
 	return value, nil
 }
 
@@ -129,6 +139,8 @@ func Int16Generator(params ...int) int16 {
 	rand.Seed(time.Now().UnixNano())
 	value := min + int16(rand.Int()) * (max - min)
 
+	time.Sleep(1 * time.Millisecond)
+
 	return value
 }
 
@@ -143,6 +155,8 @@ func Int8Generator(params ...int) int8 {
 
 	rand.Seed(time.Now().UnixNano())
 	value := min + int8(rand.Int()) * (max - min)
+
+	time.Sleep(1 * time.Millisecond)
 
 	return value
 }
