@@ -278,3 +278,27 @@ func GetReceiver(rcv any) *Receiver {
 		panic("Expected reflect.Struct or reflect.Ptr argument, received " + struct_type.Kind().String())
 	}
 }
+
+func GetMethodsFromReceivers(rcvs []any) []any {
+	var fns []any
+
+	for _, rcv := range rcvs {
+		typ := reflect.TypeOf(rcv)
+		val := reflect.ValueOf(rcv)
+
+		for i := 0; i < typ.NumMethod(); i++ {
+			method := typ.Method(i)
+
+			if method.PkgPath == "" {
+				method_val := val.MethodByName(method.Name)
+
+				if method_val.IsValid() {
+					fns = append(fns, method_val.Interface())
+					fmt.Printf("Adicionando método: %T.%s\n", rcv, method.Name)
+				}
+			}
+		}
+	}
+
+	return fns
+}

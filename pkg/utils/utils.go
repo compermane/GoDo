@@ -4,6 +4,7 @@ import (
 	"errors"
 	"fmt"
 	"math/rand"
+	"os"
 	"reflect"
 	"time"
 )
@@ -70,7 +71,6 @@ func IntGenerator(params ...int) (value int, e error) {
 	}
 
 	if max <= min {
-		fmt.Printf("%v %v\n", max, min)
 		e = errors.New(fmt.Sprintf("Intervalo inválido: [%v - %v]", min, max))
 		return 0, e
 	}
@@ -263,3 +263,19 @@ func Uint8Generator(params ...int) uint8 {
 
 	return value
 }
+
+func DumpToFile(file_name string, content string) {
+	file, err := os.OpenFile("output.txt", os.O_APPEND | os.O_CREATE | os.O_WRONLY, 0644)
+
+	if err != nil {
+		panic("Error creating file")
+	}
+
+	defer file.Close()
+
+	_, err = fmt.Fprintln(file, content)
+
+	if err != nil {
+		panic("Error writing to file")
+	}
+}	

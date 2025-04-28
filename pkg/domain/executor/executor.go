@@ -24,13 +24,18 @@ type Executor struct {
  *  :returns: Pointer to an executor
  */ 
 func InitExecutor(fn_lst []any, rcvs_lst []any) *Executor {
-	lst := make([]*functions.Function, 0)
+	lst  := make([]*functions.Function, 0)
 	rcvs := make([]*receiver.Receiver, 0)
+	glbl := make(map[string][]reflect.Value, 0)
 
+	// mtds := receiver.GetMethodsFromReceivers(rcvs_lst)
 	for _, fn := range fn_lst {
 		lst = append(lst, functions.GetFunction(fn))
 	}
 
+	// for _, mtd := range mtds {
+	// 	lst = append(lst, functions.GetFunction(mtd))
+	// }
 	for _, rcv := range rcvs_lst {
 		rcvs = append(rcvs, receiver.GetReceiver(rcv))
 	}
@@ -39,6 +44,7 @@ func InitExecutor(fn_lst []any, rcvs_lst []any) *Executor {
 		Sequences: make([]*sequence.Sequence, 0),
 		ReceiversList: rcvs,
 		FunctionsList: lst,
+		GlobalReceivers: glbl,
 	}
 }
 
@@ -160,12 +166,7 @@ func (exec *Executor) Randoop(nonErrorSequences []*sequence.Sequence,
 	error_type    := reflect.TypeOf((*error)(nil)).Elem()
 	fn  		  := functions.ChooseRandom(exec.FunctionsList)
 	seq           := sequence.ChooseRandom(nonErrorSequences)
-	args 		  := SetFuncArgs(fn, rcvs)
-
-	for _, arg := range args {
-		fmt.Printf("%+v ", arg)
-	}
-	fmt.Println()
+	args 		  := SetFuncArgs(fn, rcvs, seq, exec.GlobalReceivers)
 	reflect_args  := utils.ArgToReflectValue(args, fn.HasVariadic, fn)
 	test_function := testfunction.NewTestFunction(fn, reflect_args)
 	
@@ -234,29 +235,6 @@ func (exec *Executor) Randoop(nonErrorSequences []*sequence.Sequence,
 	// Caso contrário cria uma nova sequência unitária caso não haja erros
 	// Faz o append em non error caso a nova sequência já não exista
 	} else {
-		decider, _ 				:= utils.IntGenerator(0, 1)
-		select_random_ret_value := utils.BooleanGenerator(decider)
-
-		if select_random_ret_value {
-			arg_type := test_function.SelectRandomArg()
-			if arg_type != "" {
-				ret_val, ok := seq.GetRandomReturnedValue(arg_type)
-				if ok {
-					for i, arg := range reflect_args {
-						if !arg.IsValid() {
-							continue
-						}
-						if arg.Type() == ret_val.Type() {
-							if debug {
-								fmt.Printf("Overwriting %+v with %+v\n", arg, ret_val)
-							}
-							reflect_args[i] = ret_val
-							break
-						}
-					}
-				}
-			}
-		}
 		ok               := exec.ExecuteTestFunc(test_function, reflect_args)
 		no_error_returns := true
 		for _, ret_val := range test_function.RetValues {
@@ -283,7 +261,12 @@ func (exec *Executor) Randoop(nonErrorSequences []*sequence.Sequence,
 
 					for _, ret_value := range test_function.RetValues {
 						return_type := ret_value.Type().String()
+						new_seq.ApplyExtensibleFlags(return_type, ret_value)
 						new_seq.AppendReturnedValue(return_type, ret_value)
+
+						if ret_value.Kind() == reflect.Struct || ret_value.Kind() == reflect.Pointer {
+							exec.AppendGlobalStruct(return_type, ret_value)
+						}
 					}
 				}
 			}
@@ -336,7 +319,7 @@ func (exec *Executor) Randoop(nonErrorSequences []*sequence.Sequence,
  * :param timeout: Time limit for the chosen algorithm execution. Ignored if no_runs != 0
  * :returns: Pointer to an executor
  */
-func ExecuteFuncs(fns, rcvs []any, algorithm string, no_runs, timeout int, debug bool) *Executor {
+func ExecuteFuncs(fns, rcvs []any, algorithm string, no_runs, timeout int, debug bool, dump bool) *Executor {
 	exec := InitExecutor(fns, rcvs)
 
 	switch algorithm {
@@ -396,10 +379,35 @@ func ExecuteFuncs(fns, rcvs []any, algorithm string, no_runs, timeout int, debug
 			for i := 0; i < no_runs; i++ {
 				nonErrorSequences, errorSequences = exec.Randoop(nonErrorSequences, errorSequences, exec.ReceiversList, debug)
 			}
-			for i, seq := range nonErrorSequences {
-				if seq != nil {
-					fmt.Printf("Sequence %v: %v\n", i, seq.String())
+			if dump {
+				non_error := "-------------------Non error sequences-------------------\n"
+				err_seq   := "-------------------Error sequences-----------------------\n"
+				for i, seq := range nonErrorSequences {
+					if seq != nil {
+						non_error += fmt.Sprintf("Sequence %v: %v\n", i, seq.String())
+					}
 				}
+				for i, seq := range errorSequences {
+					if seq != nil {
+						err_seq += fmt.Sprintf("Sequence %v: %v\n", i, seq.String())
+					}
+				}
+				utils.DumpToFile("error_sequences.txt", err_seq)
+				utils.DumpToFile("non_error_sequences.txt", non_error)
+			} else {
+				for i, seq := range nonErrorSequences {
+					if seq != nil {
+						fmt.Printf("Sequence %v: %v\n", i, seq.String())
+					}
+				}
+			}
+			fmt.Println("-----------Generated Objects----------")
+			for struct_type, values := range exec.GlobalReceivers {
+				fmt.Printf("%v: ", struct_type)
+				for _, value := range values {
+					fmt.Printf("%+v ", value)
+				}
+				fmt.Println()
 			}
 		} else if timeout > 0 {
 			timeout := time.Duration(timeout) * time.Second

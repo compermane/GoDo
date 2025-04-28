@@ -4,10 +4,13 @@ import (
 	"bytes"
 	"fmt"
 	"io"
+	"math/rand"
 	"reflect"
+	"time"
 
 	"github.com/compermane/ic-go/pkg/domain/functions"
 	"github.com/compermane/ic-go/pkg/domain/receiver"
+	"github.com/compermane/ic-go/pkg/domain/sequence"
 	"github.com/compermane/ic-go/pkg/utils"
 )
 
@@ -21,7 +24,8 @@ func (exec *Executor) PrintFunctions() {
  * :param fn: Function to have arguments setted
  * :returns: None
  */
- func SetFuncArgs(fn *functions.Function, rcvs []*receiver.Receiver) []any {
+ func SetFuncArgs(fn *functions.Function, rcvs []*receiver.Receiver, 
+	              seq *sequence.Sequence, global_ret_values map[string][]reflect.Value) []any {
 	var args, list_value []any
 	var value any
 	var list_arg_flag bool
@@ -105,25 +109,74 @@ func (exec *Executor) PrintFunctions() {
 		} else {
 			/* Se o argumento é igual a uma struct */
 			tpe := fn.ArgTypes[i].Kind().String()
-			// fmt.Println(fn.ArgTypes[i].Kind().String())
 
 			if tpe == "func" {
-				var nil_value interface{} = nil 
+				var nil_value any = nil 
 				value = nil_value
 			} else if tpe == "ptr" {
 				data_kind := fn.ArgTypes[i].Elem().Kind()
 				list_arg_flag = false
 
 				if data_kind == reflect.Struct {
-					struct_name := fn.ArgTypes[i].Elem().Name()
+					struct_name := fn.ArgTypes[i].String()
 
-					// Será que não dá pra otimizar isso? utilizar um map ao invés de uma lista simples
-					for _, rcv := range rcvs {
-						if rcv.Name == struct_name {
-							rcv.SetReceiverValues(rcvs)
-							value = CloneValue(rcv.Receiver)
+					if seq != nil {
+						decider, _ := utils.IntGenerator(0, 2)
+						switch decider {
+						// Select a value v from a sequence that is already in the analysed sequence
+						case 0:
+							reflect_value, ok := seq.GetRandomReturnedValue(struct_name)
+							if ok {
+								value          = reflect_value
+							} else {
+								value          = nil
+							}
+						// Select a value v that is already returned from the nonErrorSeqs
+						case 1:
+							values     := global_ret_values[struct_name]
+							
+							if len(values) == 0 {
+								value = nil 
+								break
+							}
+							
+							rand.Seed(time.Now().UnixNano())
+							rand_index    := rand.Intn(len(values))
+							
+							reflect_value := values[rand_index]
+							value          = reflect_value
+						// Set a nil value
+						case 2:
+							value = nil
+						}
+					} else {
+						decider, _ := utils.IntGenerator(1, 2)
+
+						switch decider {
+						case 1:
+							values     := global_ret_values[struct_name]
+
+							if len(values) == 0 {
+								value = nil 
+								break
+							}
+
+							rand.Seed(time.Now().UnixNano())
+							rand_index    := rand.Intn(len(values))
+
+							reflect_value := values[rand_index]
+							value = reflect_value
+						// Set a nil value
+						case 2:
+							value = nil
 						}
 					}
+						// for _, rcv := range rcvs {
+						// 	if rcv.Name == struct_name {
+						// 		rcv.SetReceiverValues(rcvs)
+						// 		value = CloneValue(rcv.Receiver)
+						// 	}
+						// }
 				} 
 			} else {
 				list_arg_flag = false
@@ -135,7 +188,6 @@ func (exec *Executor) PrintFunctions() {
 		}
 
 		if !list_arg_flag {
-			fmt.Println(value)
 			args = append(args, value)
 		} else {
 			args = append(args, list_value)
@@ -157,4 +209,27 @@ func CloneValue(original any) any {
 	copyVal.Set(origVal)
 
 	return copyVal.Addr().Interface()
+}
+
+func UnwrapValue(val reflect.Value) any {
+	// Se for um ponteiro, desreferencia
+	if val.Kind() == reflect.Ptr {
+		if !val.IsNil() {
+			return val.Pointer() // Retorna o valor real da struct apontada
+		}
+		return nil // Se o ponteiro for nil, retorna nil
+	}
+	// Se já for uma struct, retorna diretamente a struct
+	return val.Interface()
+}
+
+func (exec *Executor) AppendGlobalStruct(value_type string, value reflect.Value) {
+	_, exist := exec.GlobalReceivers[value_type] 
+
+	if exist {
+		exec.GlobalReceivers[value_type] = append(exec.GlobalReceivers[value_type], value)
+	} else {
+		exec.GlobalReceivers[value_type] = make([]reflect.Value, 0)
+		exec.GlobalReceivers[value_type] = append(exec.GlobalReceivers[value_type], value)
+	}
 }

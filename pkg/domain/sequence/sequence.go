@@ -35,12 +35,14 @@ func NewSequence(functions []*testfunction.TestFunction, receivers []*receiver.R
 	sq_id := create_id(str)
 
 	returned_values := make(map[string][]reflect.Value, 0)
+	extensible_flag := make([]bool, 0)
 
 	return &Sequence{
 		SequenceID: sq_id,
 		Functions: functions,
 		Receivers: receivers,
 		ReturnedValues: returned_values,
+		ExtensibleFlag: extensible_flag,
 	}
 }
 
@@ -100,6 +102,10 @@ func (sq *Sequence) AppendSequence(seq *Sequence) *Sequence {
 		newSeq.ReturnedValues[chave] = newSlice
 	}
 
+	new_slice := make([]bool, len(sq.ExtensibleFlag))
+	copy(new_slice, sq.ExtensibleFlag)
+	newSeq.ExtensibleFlag = new_slice
+
 	newSeq.Functions = append(newSeq.Functions, seq.Functions...)
 	newSeq.Receivers = append(newSeq.Receivers, seq.Receivers...)
 
@@ -111,6 +117,10 @@ func (sq *Sequence) AppendSequence(seq *Sequence) *Sequence {
 	return newSeq
 }
 
+/* Puts into a sequence sq the values returned from a reflect.Call execution
+ * :param return_type: type of param value
+ * :param value: retuned value
+ */
 func (sq *Sequence) AppendReturnedValue(return_type string, value reflect.Value) {
 	_, exist := sq.ReturnedValues[return_type]
 
@@ -122,6 +132,11 @@ func (sq *Sequence) AppendReturnedValue(return_type string, value reflect.Value)
 	}
 }
 
+/* Yields a returned value from the list of returned values of a sequence sq based on its type.
+ * Should be used in sequence extension.
+ * :param value_type: type of the desired random value
+ * :returns: a chosen reflect.Value and a flag that indicates if it was successful (true) or not (false)
+ */
 func (sq *Sequence) GetRandomReturnedValue(value_type string) (reflect.Value, bool) {
 	val, ok := sq.ReturnedValues[value_type]
 
@@ -142,6 +157,12 @@ func (sq *Sequence) GetRandomReturnedValue(value_type string) (reflect.Value, bo
 
 	random_index := rng.Intn(slice.Len())
 
+	// fmt.Printf("a: %v\nb: %v\n", len(sq.ExtensibleFlag), slice.Len())
+	// for len(sq.ExtensibleFlag) > 0 && !sq.ExtensibleFlag[random_index] {
+	// 	fmt.Println("BRUH")
+	// 	random_index = rng.Intn(slice.Len())
+	// }
+
 	result := slice.Index(random_index)
 
 	if result.Type() == reflect.TypeOf(reflect.Value{}) {
@@ -150,6 +171,44 @@ func (sq *Sequence) GetRandomReturnedValue(value_type string) (reflect.Value, bo
 
 	return result, true
 	
+}
+
+func (sq *Sequence) ApplyExtensibleFlags(ret_type string, ret_value reflect.Value) {
+	error_type  := reflect.TypeOf((*error)(nil)).Elem()
+	not_equal   := true
+	not_nil		:= true
+	not_error   := true
+	vals, exist := sq.ReturnedValues[ret_type]
+
+	// o' = o for some o returned from the sequence
+	if exist {
+		for _, value := range vals {
+			not_equal = !reflect.DeepEqual(value.Interface(), ret_value.Interface())
+
+			if value.Kind() == reflect.Ptr {
+				not_equal = !reflect.DeepEqual(value.Elem().Interface(), ret_value.Elem().Interface())	
+			}
+			
+		}
+	}
+
+	switch ret_value.Kind() {
+		case reflect.Chan, reflect.Func, reflect.Interface,
+		reflect.Map, reflect.Ptr, reflect.Slice:
+			if !ret_value.IsValid() || ret_value.IsNil() {
+				not_nil = false
+	}
+	}
+
+	if ret_value.Type().Implements(error_type) {
+		not_error = false
+	}
+	
+	if not_equal && not_nil && not_error {
+		sq.ExtensibleFlag = append(sq.ExtensibleFlag, true)
+	} else {
+		sq.ExtensibleFlag = append(sq.ExtensibleFlag, false)
+	}
 }
 
 /* Represents sq sequence functions as a string.
