@@ -9,7 +9,6 @@ import (
 	"time"
 
 	"github.com/compermane/ic-go/pkg/domain/functions"
-	"github.com/compermane/ic-go/pkg/domain/receiver"
 	"github.com/compermane/ic-go/pkg/domain/sequence"
 	"github.com/compermane/ic-go/pkg/utils"
 )
@@ -24,8 +23,7 @@ func (exec *Executor) PrintFunctions() {
  * :param fn: Function to have arguments setted
  * :returns: None
  */
- func SetFuncArgs(fn *functions.Function, rcvs []*receiver.Receiver, 
-	              seq *sequence.Sequence, global_ret_values map[string][]reflect.Value) []any {
+ func SetFuncArgs(fn *functions.Function, seq *sequence.Sequence, global_ret_values map[string][]reflect.Value) []any {
 	var args, list_value []any
 	var value any
 	var list_arg_flag bool
@@ -246,7 +244,7 @@ func getUntestedFuncs(nonErrorSeqs, errorSeqs []*sequence.Sequence, funcs []*fun
 	}
 	str_untested += "]"
 	str_error += "]"
-	
+
 	return str_untested, str_error
 }
 

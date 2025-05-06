@@ -6,14 +6,12 @@ import (
 	"reflect"
 	"time"
 
-	"github.com/compermane/ic-go/pkg/domain/receiver"
 	"github.com/compermane/ic-go/pkg/domain/testfunction"
 )
 
 type Sequence struct {
 	SequenceID 		uint64
 	Functions 		[]*testfunction.TestFunction
-	Receivers 		[]*receiver.Receiver
 	ReturnedValues	map[string][]reflect.Value
 	ExtensibleFlag  []bool
 }
@@ -23,7 +21,7 @@ type Sequence struct {
  * :param receivers: list of receivers associated with the functions (can be nil)
  * :returns: pointer to a new sequence
  */
-func NewSequence(functions []*testfunction.TestFunction, receivers []*receiver.Receiver) *Sequence {
+func NewSequence(functions []*testfunction.TestFunction) *Sequence {
 	str := ""
 	for _, fn := range functions {
 		str += fn.Name
@@ -40,7 +38,6 @@ func NewSequence(functions []*testfunction.TestFunction, receivers []*receiver.R
 	return &Sequence{
 		SequenceID: sq_id,
 		Functions: functions,
-		Receivers: receivers,
 		ReturnedValues: returned_values,
 		ExtensibleFlag: extensible_flag,
 	}
@@ -92,7 +89,6 @@ func VerifyDuplicate(seqs []*Sequence) bool {
 func (sq *Sequence) AppendSequence(seq *Sequence) *Sequence {
 	newSeq := &Sequence{
 		Functions: append([]*testfunction.TestFunction{}, sq.Functions...),
-		Receivers: append([]*receiver.Receiver{}, sq.Receivers...),
 		ReturnedValues: make(map[string][]reflect.Value),
 	}
 
@@ -107,7 +103,6 @@ func (sq *Sequence) AppendSequence(seq *Sequence) *Sequence {
 	newSeq.ExtensibleFlag = new_slice
 
 	newSeq.Functions = append(newSeq.Functions, seq.Functions...)
-	newSeq.Receivers = append(newSeq.Receivers, seq.Receivers...)
 
 	// Atualiza o ID da sequência, se necessário, usando a nova sequência como base
 	newSeq.SequenceID = update_id(newSeq, seq)

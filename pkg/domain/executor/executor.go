@@ -6,7 +6,6 @@ import (
 	"time"
 
 	functions "github.com/compermane/ic-go/pkg/domain/functions"
-	"github.com/compermane/ic-go/pkg/domain/receiver"
 	"github.com/compermane/ic-go/pkg/domain/sequence"
 	"github.com/compermane/ic-go/pkg/domain/testfunction"
 	"github.com/compermane/ic-go/pkg/utils"
@@ -14,7 +13,6 @@ import (
 
 type Executor struct {
 	Sequences           []*sequence.Sequence			// Sequências geradas pelo algoritmo 
-	ReceiversList		[]*receiver.Receiver			// Lista de receivers para execução de seus métodos/execução em que são argumento
 	FunctionsList		[]*functions.Function 			// Lista de funções para serem testadas
 	GlobalReceivers		map[string][]reflect.Value      // Mapa contendo todas os receivers retornados durante a execução do algoritmo
 }
@@ -25,7 +23,6 @@ type Executor struct {
  */ 
 func InitExecutor(fn_lst []any, rcvs_lst []any) *Executor {
 	lst  := make([]*functions.Function, 0)
-	rcvs := make([]*receiver.Receiver, 0)
 	glbl := make(map[string][]reflect.Value, 0)
 
 	// mtds := receiver.GetMethodsFromReceivers(rcvs_lst)
@@ -33,16 +30,8 @@ func InitExecutor(fn_lst []any, rcvs_lst []any) *Executor {
 		lst = append(lst, functions.GetFunction(fn))
 	}
 
-	// for _, mtd := range mtds {
-	// 	lst = append(lst, functions.GetFunction(mtd))
-	// }
-	for _, rcv := range rcvs_lst {
-		rcvs = append(rcvs, receiver.GetReceiver(rcv))
-	}
-
 	return &Executor{
 		Sequences: make([]*sequence.Sequence, 0),
-		ReceiversList: rcvs,
 		FunctionsList: lst,
 		GlobalReceivers: glbl,
 	}
@@ -77,13 +66,12 @@ func (exec *Executor) ExecuteTestFunc(fn *testfunction.TestFunction, args []refl
 
 func (exec *Executor) Randoop(nonErrorSequences []*sequence.Sequence, 
 							  errorSequences 	[]*sequence.Sequence,
-							  rcvs 				[]*receiver.Receiver,
 							  debug 			bool,
 							  timeout           time.Duration) ([]*sequence.Sequence, []*sequence.Sequence) {
 	error_type    := reflect.TypeOf((*error)(nil)).Elem()
 	fn  		  := functions.ChooseRandom(exec.FunctionsList)
 	seq           := sequence.ChooseRandom(nonErrorSequences)
-	args 		  := SetFuncArgs(fn, rcvs, seq, exec.GlobalReceivers)
+	args 		  := SetFuncArgs(fn, seq, exec.GlobalReceivers)
 	reflect_args  := utils.ArgToReflectValue(args, fn.HasVariadic, fn)
 	test_function := testfunction.NewTestFunction(fn, reflect_args)
 	
@@ -107,13 +95,13 @@ func (exec *Executor) Randoop(nonErrorSequences []*sequence.Sequence,
 
 	// Tratar já existência da sequência a ser formada
 	if seq == nil {
-		verify_seq := sequence.NewSequence([]*testfunction.TestFunction{test_function}, nil)
+		verify_seq := sequence.NewSequence([]*testfunction.TestFunction{test_function})
 		if sequence.VerifyExistence(nonErrorSequences, verify_seq) || sequence.VerifyExistence(errorSequences, verify_seq) {
 			return nonErrorSequences, errorSequences
 		}
 
 	} else {
-		verify_seq := seq.AppendSequence(sequence.NewSequence([]*testfunction.TestFunction{test_function}, nil))
+		verify_seq := seq.AppendSequence(sequence.NewSequence([]*testfunction.TestFunction{test_function}))
 		if sequence.VerifyExistence(nonErrorSequences, verify_seq) || sequence.VerifyExistence(errorSequences, verify_seq) {
 			return nonErrorSequences, errorSequences
 		}
@@ -140,7 +128,7 @@ func (exec *Executor) Randoop(nonErrorSequences []*sequence.Sequence,
 		// Se a execução não deu panic, cria uma nova sequência unitária
 		// Faz o append caso não a função não exista na lista de funções non error
 		if ok && no_error_returns {
-			new_seq := sequence.NewSequence([]*testfunction.TestFunction{test_function}, nil)
+			new_seq := sequence.NewSequence([]*testfunction.TestFunction{test_function})
 
 			if nonErrorSequences != nil {
 				nonErrorSequences = append(nonErrorSequences, new_seq)
@@ -152,7 +140,7 @@ func (exec *Executor) Randoop(nonErrorSequences []*sequence.Sequence,
 			}
 		// Caso contrário, faz o append na lista de funções error
 		} else {
-			new_err_seq := sequence.NewSequence([]*testfunction.TestFunction{test_function}, nil)
+			new_err_seq := sequence.NewSequence([]*testfunction.TestFunction{test_function})
 			errorSequences = append(errorSequences, new_err_seq)
 		}
 	// Caso contrário cria uma nova sequência unitária caso não haja erros
@@ -175,7 +163,7 @@ func (exec *Executor) Randoop(nonErrorSequences []*sequence.Sequence,
 		}
 
 		if ok && no_error_returns {
-			new_seq := sequence.NewSequence([]*testfunction.TestFunction{test_function}, nil)
+			new_seq := sequence.NewSequence([]*testfunction.TestFunction{test_function})
 			new_seq  = seq.AppendSequence(new_seq)
 
 			if nonErrorSequences != nil {
@@ -192,7 +180,7 @@ func (exec *Executor) Randoop(nonErrorSequences []*sequence.Sequence,
 				}
 			}
 		} else {
-			new_err_seq := sequence.NewSequence([]*testfunction.TestFunction{test_function}, nil)
+			new_err_seq := sequence.NewSequence([]*testfunction.TestFunction{test_function})
 			new_err_seq  = seq.AppendSequence(new_err_seq)
 
 			if errorSequences != nil {
@@ -235,8 +223,8 @@ func (exec *Executor) Randoop(nonErrorSequences []*sequence.Sequence,
  * :param rcvs: List of receivers
  * :param algorithm: Algorithm for GODO execution
  * :param no_runs: Number of iterations of the chosen algorithm
- * :param duration: Time limit for the chosen algorithm execution. Ignored if no_runs != 0
- * :param timmeout: Time limit for the execution of a single function
+ * :param duration: Time limit for the chosen algorithm execution (seconds). Ignored if no_runs != 0
+ * :param timmeout: Time limit for the execution of a single function (seconds)
  * :param debug: Show information on the terminal
  * :param dump: Dump collected information on files
  * :returns: Pointer to an executor
@@ -300,7 +288,7 @@ func ExecuteFuncs(fns, rcvs []any, algorithm string, no_runs, duration, timeout 
 		nonErrorSequences = append(nonErrorSequences, nil)
 		if no_runs > 0 {
 			for i := 0; i < no_runs; i++ {
-				nonErrorSequences, errorSequences = exec.Randoop(nonErrorSequences, errorSequences, exec.ReceiversList, debug, time.Duration(func_timeout))
+				nonErrorSequences, errorSequences = exec.Randoop(nonErrorSequences, errorSequences, debug, time.Duration(func_timeout))
 			}
 			if dump {
 				non_error := "-------------------Non error sequences-------------------\n"
@@ -348,7 +336,7 @@ func ExecuteFuncs(fns, rcvs []any, algorithm string, no_runs, duration, timeout 
 					fmt.Printf("Executed %v funcs\n\n", n)
 					return exec
 				default:
-					exec.Randoop(nonErrorSequences, errorSequences, exec.ReceiversList, debug, time.Duration(func_timeout))
+					exec.Randoop(nonErrorSequences, errorSequences, debug, time.Duration(func_timeout))
 					n = n + 1
 				}
 			}
