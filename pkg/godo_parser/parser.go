@@ -42,7 +42,7 @@ func GetPublicFunctionsFromDir(dir_path string) []FunctionInfo {
 
 		if entry.IsDir() {
 			funcs = append(funcs, GetPublicFunctionsFromDir(full_path)...)
-		} else {
+		} else if !strings.HasSuffix(full_path, "_test.go") {
 			if filepath.Ext(entry.Name()) != ".go" {
 				continue
 			}

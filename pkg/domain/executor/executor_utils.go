@@ -171,17 +171,11 @@ func (exec *Executor) PrintFunctions() {
 							value = nil
 						}
 					}
-						// for _, rcv := range rcvs {
-						// 	if rcv.Name == struct_name {
-						// 		rcv.SetReceiverValues(rcvs)
-						// 		value = CloneValue(rcv.Receiver)
-						// 	}
-						// }
 				} 
 			} else {
 				list_arg_flag = false
 				if tp == "error" {
-					var nil_value interface{} = nil
+					var nil_value any = nil
 					value = nil_value
 				}
 			}
@@ -233,3 +227,44 @@ func (exec *Executor) AppendGlobalStruct(value_type string, value reflect.Value)
 		exec.GlobalReceivers[value_type] = append(exec.GlobalReceivers[value_type], value)
 	}
 }
+
+func getUntestedFuncs(nonErrorSeqs, errorSeqs []*sequence.Sequence, funcs []*functions.Function) (string, string) {
+	nonErrorSeqsAppearences := makeMap(nonErrorSeqs)
+	errorSeqsAppearences    := makeMap(errorSeqs)
+
+	str_untested := "[ "
+	str_error    := "[ "
+	for _, fn := range funcs {
+		_, ok1 := nonErrorSeqsAppearences[fn.Name]
+		_, ok2 := errorSeqsAppearences[fn.Name]
+
+		if !ok1 && !ok2 {
+			str_untested += fn.Name + " "
+		} else if ok1 && !ok2 {
+			str_error    += fn.Name + " "
+		}
+	}
+	str_untested += "]"
+	str_error += "]"
+	
+	return str_untested, str_error
+}
+
+func makeMap(seqs []*sequence.Sequence) map[string]int {
+	map_of_appearences := make(map[string]int)
+
+	for _, seq := range seqs {
+		if seq == nil {
+			continue
+		}
+		for _, fn := range seq.Functions {
+			if _, ok := map_of_appearences[fn.Name]; ok {
+				map_of_appearences[fn.Name] += 1
+			} else {
+				map_of_appearences[fn.Name] = 1
+			}
+		}
+	}
+
+	return map_of_appearences
+} 

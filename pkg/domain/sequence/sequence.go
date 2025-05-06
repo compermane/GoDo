@@ -185,7 +185,7 @@ func (sq *Sequence) ApplyExtensibleFlags(ret_type string, ret_value reflect.Valu
 		for _, value := range vals {
 			not_equal = !reflect.DeepEqual(value.Interface(), ret_value.Interface())
 
-			if value.Kind() == reflect.Ptr {
+			if value.Kind() == reflect.Ptr && value.IsValid() {
 				not_equal = !reflect.DeepEqual(value.Elem().Interface(), ret_value.Elem().Interface())	
 			}
 			
@@ -218,7 +218,17 @@ func (sq *Sequence) String() string {
 	str := "[ "
 
 	for _, fn := range sq.Functions {
-		str += fn.Name + " "
+		str += fn.Name + " ( "
+
+		for _, arg := range fn.ArgValues {
+			if arg.IsValid() {
+				str += fmt.Sprintf("%+v ", arg.Interface())
+			} else {
+				str += fmt.Sprintf("nil ")
+			}
+		}
+
+		str += ")"
 	}
 
 	str += "]"

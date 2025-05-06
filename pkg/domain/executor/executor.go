@@ -48,30 +48,38 @@ func InitExecutor(fn_lst []any, rcvs_lst []any) *Executor {
 	}
 }
 
-func (exec *Executor) ExecuteTestFunc(fn *testfunction.TestFunction, args []reflect.Value) (ok bool){
-	ok = false
-	defer func() {
-		if r := recover(); r != nil {
-			fmt.Printf("Exception during execution of %v: %v\n", fn.Name, r)
-			fn.HasError = true
-			fn.Error = r
-			ok = false
-			} else {
-				ok = true
+func (exec *Executor) ExecuteTestFunc(fn *testfunction.TestFunction, args []reflect.Value, timeout time.Duration) (ok bool){
+	result_chan := make(chan bool)
+	
+	go func() {
+		defer func() {
+			if r := recover(); r != nil {
+				fmt.Printf("Exception during execution of %v: %v\n", fn.Name, r)
+				fn.HasError = true
+				fn.Error = r
+
+				result_chan <- false
+				return 
 			}
-			}()
-
-	time.Sleep(15 * time.Millisecond)
-	fn.RetValues = fn.Signature.Call(args)
-	// fmt.Printf("Function %v ( %v ) succesfully executed: %v\n", fn.Name, fn.Args, exec.GetFunctionReturns(fn))
-
-	return 
+			result_chan <- true
+		}()
+		fn.RetValues = fn.Signature.Call(args)
+	}()
+	
+	select {
+	case ok = <-result_chan:
+		return ok
+	case <-time.After(timeout):
+		fmt.Printf("Function %v timedout after %v\n", fn.Name, timeout)
+		return false
+	}		
 }
 
 func (exec *Executor) Randoop(nonErrorSequences []*sequence.Sequence, 
 							  errorSequences 	[]*sequence.Sequence,
 							  rcvs 				[]*receiver.Receiver,
-							  debug 			bool) ([]*sequence.Sequence, []*sequence.Sequence) {
+							  debug 			bool,
+							  timeout           time.Duration) ([]*sequence.Sequence, []*sequence.Sequence) {
 	error_type    := reflect.TypeOf((*error)(nil)).Elem()
 	fn  		  := functions.ChooseRandom(exec.FunctionsList)
 	seq           := sequence.ChooseRandom(nonErrorSequences)
@@ -97,9 +105,23 @@ func (exec *Executor) Randoop(nonErrorSequences []*sequence.Sequence,
 		fmt.Println()
 	}
 
+	// Tratar já existência da sequência a ser formada
+	if seq == nil {
+		verify_seq := sequence.NewSequence([]*testfunction.TestFunction{test_function}, nil)
+		if sequence.VerifyExistence(nonErrorSequences, verify_seq) || sequence.VerifyExistence(errorSequences, verify_seq) {
+			return nonErrorSequences, errorSequences
+		}
+
+	} else {
+		verify_seq := seq.AppendSequence(sequence.NewSequence([]*testfunction.TestFunction{test_function}, nil))
+		if sequence.VerifyExistence(nonErrorSequences, verify_seq) || sequence.VerifyExistence(errorSequences, verify_seq) {
+			return nonErrorSequences, errorSequences
+		}
+	}
+
 	// Caso a sequência selecionada é a vazia
 	if seq == nil {
-		ok 			     := exec.ExecuteTestFunc(test_function, reflect_args)
+		ok 			     := exec.ExecuteTestFunc(test_function, reflect_args, timeout)
 		no_error_returns := true
 
 		for _, ret_val := range test_function.RetValues {
@@ -121,30 +143,22 @@ func (exec *Executor) Randoop(nonErrorSequences []*sequence.Sequence,
 			new_seq := sequence.NewSequence([]*testfunction.TestFunction{test_function}, nil)
 
 			if nonErrorSequences != nil {
-				if !sequence.VerifyExistence(nonErrorSequences, new_seq) {
-					nonErrorSequences = append(nonErrorSequences, new_seq)
+				nonErrorSequences = append(nonErrorSequences, new_seq)
 
-					for _, ret_value := range test_function.RetValues {
-						return_type := ret_value.Type().String()
-						new_seq.AppendReturnedValue(return_type, ret_value)
-					}
+				for _, ret_value := range test_function.RetValues {
+					return_type := ret_value.Type().String()
+					new_seq.AppendReturnedValue(return_type, ret_value)
 				}
 			}
 		// Caso contrário, faz o append na lista de funções error
 		} else {
 			new_err_seq := sequence.NewSequence([]*testfunction.TestFunction{test_function}, nil)
-			if errorSequences != nil {
-				if !sequence.VerifyExistence(errorSequences, new_err_seq) {
-					errorSequences = append(errorSequences, new_err_seq)
-				}
-			} else {
-				errorSequences = append(errorSequences, new_err_seq)
-			}
+			errorSequences = append(errorSequences, new_err_seq)
 		}
 	// Caso contrário cria uma nova sequência unitária caso não haja erros
 	// Faz o append em non error caso a nova sequência já não exista
 	} else {
-		ok               := exec.ExecuteTestFunc(test_function, reflect_args)
+		ok               := exec.ExecuteTestFunc(test_function, reflect_args, timeout)
 		no_error_returns := true
 		for _, ret_val := range test_function.RetValues {
 			if ret_val.Kind() == reflect.Ptr    || ret_val.Kind() == reflect.Interface ||
@@ -165,17 +179,15 @@ func (exec *Executor) Randoop(nonErrorSequences []*sequence.Sequence,
 			new_seq  = seq.AppendSequence(new_seq)
 
 			if nonErrorSequences != nil {
-				if !sequence.VerifyExistence(nonErrorSequences, new_seq) {
-					nonErrorSequences = append(nonErrorSequences, new_seq)
+				nonErrorSequences = append(nonErrorSequences, new_seq)
 
-					for _, ret_value := range test_function.RetValues {
-						return_type := ret_value.Type().String()
-						new_seq.ApplyExtensibleFlags(return_type, ret_value)
-						new_seq.AppendReturnedValue(return_type, ret_value)
+				for _, ret_value := range test_function.RetValues {
+					return_type := ret_value.Type().String()
+					new_seq.ApplyExtensibleFlags(return_type, ret_value)
+					new_seq.AppendReturnedValue(return_type, ret_value)
 
-						if ret_value.Kind() == reflect.Struct || ret_value.Kind() == reflect.Pointer {
-							exec.AppendGlobalStruct(return_type, ret_value)
-						}
+					if ret_value.Kind() == reflect.Struct || ret_value.Kind() == reflect.Pointer {
+						exec.AppendGlobalStruct(return_type, ret_value)
 					}
 				}
 			}
@@ -184,9 +196,7 @@ func (exec *Executor) Randoop(nonErrorSequences []*sequence.Sequence,
 			new_err_seq  = seq.AppendSequence(new_err_seq)
 
 			if errorSequences != nil {
-				if !sequence.VerifyExistence(errorSequences, new_err_seq) {
-					errorSequences = append(errorSequences, new_err_seq)
-				}
+				errorSequences = append(errorSequences, new_err_seq)
 			}
 		}
 	}
@@ -225,11 +235,15 @@ func (exec *Executor) Randoop(nonErrorSequences []*sequence.Sequence,
  * :param rcvs: List of receivers
  * :param algorithm: Algorithm for GODO execution
  * :param no_runs: Number of iterations of the chosen algorithm
- * :param timeout: Time limit for the chosen algorithm execution. Ignored if no_runs != 0
+ * :param duration: Time limit for the chosen algorithm execution. Ignored if no_runs != 0
+ * :param timmeout: Time limit for the execution of a single function
+ * :param debug: Show information on the terminal
+ * :param dump: Dump collected information on files
  * :returns: Pointer to an executor
  */
-func ExecuteFuncs(fns, rcvs []any, algorithm string, no_runs, timeout int, debug bool, dump bool) *Executor {
+func ExecuteFuncs(fns, rcvs []any, algorithm string, no_runs, duration, timeout int, debug bool, dump bool) *Executor {
 	exec := InitExecutor(fns, rcvs)
+	func_timeout := time.Duration(timeout) * time.Second
 
 	switch algorithm {
 	case "baseline1":
@@ -237,9 +251,9 @@ func ExecuteFuncs(fns, rcvs []any, algorithm string, no_runs, timeout int, debug
 			for i := 0; i < no_runs; i++ {
 				// exec.SimpleExecution()
 			}
-		} else if timeout > 0 {
-			timeout := time.Duration(timeout) * time.Second
-			timer := time.After(timeout)
+		} else if duration > 0 {
+			duration := time.Duration(duration) * time.Second
+			timer := time.After(duration)
 			
 			n := 0
 			for {
@@ -261,9 +275,9 @@ func ExecuteFuncs(fns, rcvs []any, algorithm string, no_runs, timeout int, debug
 				fmt.Println(i)
 				// exec.ExecuteSequences()
 			}
-		} else if timeout > 0 {
-			timeout := time.Duration(timeout) * time.Second
-			timer := time.After(timeout)
+		} else if duration > 0 {
+			duration := time.Duration(duration) * time.Second
+			timer := time.After(duration)
 			
 			n := 0
 			for {
@@ -286,11 +300,12 @@ func ExecuteFuncs(fns, rcvs []any, algorithm string, no_runs, timeout int, debug
 		nonErrorSequences = append(nonErrorSequences, nil)
 		if no_runs > 0 {
 			for i := 0; i < no_runs; i++ {
-				nonErrorSequences, errorSequences = exec.Randoop(nonErrorSequences, errorSequences, exec.ReceiversList, debug)
+				nonErrorSequences, errorSequences = exec.Randoop(nonErrorSequences, errorSequences, exec.ReceiversList, debug, time.Duration(func_timeout))
 			}
 			if dump {
 				non_error := "-------------------Non error sequences-------------------\n"
 				err_seq   := "-------------------Error sequences-----------------------\n"
+
 				for i, seq := range nonErrorSequences {
 					if seq != nil {
 						non_error += fmt.Sprintf("Sequence %v: %v\n", i, seq.String())
@@ -301,6 +316,10 @@ func ExecuteFuncs(fns, rcvs []any, algorithm string, no_runs, timeout int, debug
 						err_seq += fmt.Sprintf("Sequence %v: %v\n", i, seq.String())
 					}
 				}
+				untested, err := getUntestedFuncs(nonErrorSequences, errorSequences, exec.FunctionsList)
+
+				utils.DumpToFile("untested_functions.txt", untested)
+				utils.DumpToFile("error_functions.txt", err)
 				utils.DumpToFile("error_sequences.txt", err_seq)
 				utils.DumpToFile("non_error_sequences.txt", non_error)
 			} else {
@@ -329,7 +348,7 @@ func ExecuteFuncs(fns, rcvs []any, algorithm string, no_runs, timeout int, debug
 					fmt.Printf("Executed %v funcs\n\n", n)
 					return exec
 				default:
-					exec.Randoop(nonErrorSequences, errorSequences, exec.ReceiversList, debug)
+					exec.Randoop(nonErrorSequences, errorSequences, exec.ReceiversList, debug, time.Duration(func_timeout))
 					n = n + 1
 				}
 			}
