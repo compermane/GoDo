@@ -9,6 +9,7 @@ import (
 	"time"
 
 	"github.com/compermane/ic-go/pkg/domain/functions"
+	"github.com/compermane/ic-go/pkg/domain/receiver"
 	"github.com/compermane/ic-go/pkg/domain/sequence"
 	"github.com/compermane/ic-go/pkg/utils"
 )
@@ -21,9 +22,13 @@ func (exec *Executor) PrintFunctions() {
 
 /* Sets function arguments. Its values should be the same througout the whole execution of GODO.
  * :param fn: Function to have arguments setted
+ * :param seq: Sequence where fn is going to be extended
+ * :param global_ret_values: Global structs returned from the executor
+ * :param create_structs: Creates a sample struct if true, otherwise sets nil
  * :returns: None
  */
- func SetFuncArgs(fn *functions.Function, seq *sequence.Sequence, global_ret_values map[string][]reflect.Value) []any {
+ func SetFuncArgs(fn *functions.Function, seq *sequence.Sequence, rcvs []*receiver.Receiver,
+	              global_ret_values map[string][]reflect.Value, create_structs bool) []any {
 	var args, list_value []any
 	var value any
 	var list_arg_flag bool
@@ -38,7 +43,7 @@ func (exec *Executor) PrintFunctions() {
 			value, _ = utils.Float32Generator()
 		} else if (tp == "int" || tpe == "int") {
 			list_arg_flag = false
-			value, _ = utils.IntGenerator(-4096, 4096)
+			value, _ = utils.IntGenerator(-32, 32)
 		} else if (tp == "int64") {
 			list_arg_flag = false
 			value, _ = utils.Int64Generator()
@@ -125,6 +130,7 @@ func (exec *Executor) PrintFunctions() {
 						case 0:
 							reflect_value, ok := seq.GetRandomReturnedValue(struct_name)
 							if ok {
+								fmt.Printf("CASE 0: %+v\n", reflect_value)
 								value          = reflect_value
 							} else {
 								value          = nil
@@ -145,7 +151,19 @@ func (exec *Executor) PrintFunctions() {
 							value          = reflect_value
 						// Set a nil value
 						case 2:
-							value = nil
+							if create_structs {
+								for _, rcv := range rcvs {
+									fmt.Println("TENTANDO ACHAR")
+									if struct_name == rcv.Name {
+										fmt.Println("ACHOU")
+										rcv.SetReceiverValues(rcvs)
+										value = CloneValue(rcv.Receiver)
+										break
+									}
+								}
+							} else {
+								value = nil
+							}
 						}
 					} else {
 						decider, _ := utils.IntGenerator(1, 2)
@@ -166,7 +184,16 @@ func (exec *Executor) PrintFunctions() {
 							value = reflect_value
 						// Set a nil value
 						case 2:
-							value = nil
+							if create_structs {
+								for _, rcv := range rcvs {
+									if struct_name == rcv.Name {
+										rcv.SetReceiverValues(rcvs)
+										value = CloneValue(rcv.Receiver)
+									}
+								}
+							} else {
+								value = nil
+							}
 						}
 					}
 				} 
@@ -230,26 +257,25 @@ func getUntestedFuncs(nonErrorSeqs, errorSeqs []*sequence.Sequence, funcs []*fun
 	nonErrorSeqsAppearences := makeMap(nonErrorSeqs)
 	errorSeqsAppearences    := makeMap(errorSeqs)
 
-	str_untested := "[ "
-	str_error    := "[ "
+	str_untested := ""
+	str_error    := ""
 	for _, fn := range funcs {
 		_, ok1 := nonErrorSeqsAppearences[fn.Name]
-		_, ok2 := errorSeqsAppearences[fn.Name]
+		err, ok2 := errorSeqsAppearences[fn.Name]
 
 		if !ok1 && !ok2 {
-			str_untested += fn.Name + " "
-		} else if ok1 && !ok2 {
-			str_error    += fn.Name + " "
+			str_untested += fn.Name + "\n"
+		} 
+		if !ok1 && ok2 {
+			str_error    += fn.Name + ": " + err + "\n"
 		}
 	}
-	str_untested += "]"
-	str_error += "]"
 
 	return str_untested, str_error
 }
 
-func makeMap(seqs []*sequence.Sequence) map[string]int {
-	map_of_appearences := make(map[string]int)
+func makeMap(seqs []*sequence.Sequence) map[string]string {
+	map_of_appearences := make(map[string]string)
 
 	for _, seq := range seqs {
 		if seq == nil {
@@ -257,9 +283,17 @@ func makeMap(seqs []*sequence.Sequence) map[string]int {
 		}
 		for _, fn := range seq.Functions {
 			if _, ok := map_of_appearences[fn.Name]; ok {
-				map_of_appearences[fn.Name] += 1
+				if fn.HasError {
+					map_of_appearences[fn.Name] += fmt.Sprintf("[%v] ", fn.Error)
+				} else {
+					map_of_appearences[fn.Name] += ""
+				}
 			} else {
-				map_of_appearences[fn.Name] = 1
+				if fn.HasError {
+					map_of_appearences[fn.Name] += fmt.Sprintf("[%v] ", fn.Error)
+				} else {
+					map_of_appearences[fn.Name] = ""
+				}
 			}
 		}
 	}

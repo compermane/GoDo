@@ -76,9 +76,7 @@ func IntGenerator(params ...int) (value int, e error) {
 	}
 
 	rand.Seed(time.Now().UnixNano())
-	value = min + rand.Intn(max-min)
-
-	time.Sleep(1 * time.Millisecond)
+	value = min + rand.Intn(max-min + 1)
 
 	return value, nil
 }

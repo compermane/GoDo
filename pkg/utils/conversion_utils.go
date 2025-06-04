@@ -73,3 +73,7 @@ func ConvertTypeToAlias(value any, alias_type reflect.Type) any {
 
 	return converted
 }
+
+func GetSliceType(slice reflect.Type) reflect.Type {
+	return slice.Elem()
+}

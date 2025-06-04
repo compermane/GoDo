@@ -3,9 +3,11 @@ package executor
 import (
 	"fmt"
 	"reflect"
+	"runtime"
 	"time"
 
 	functions "github.com/compermane/ic-go/pkg/domain/functions"
+	"github.com/compermane/ic-go/pkg/domain/receiver"
 	"github.com/compermane/ic-go/pkg/domain/sequence"
 	"github.com/compermane/ic-go/pkg/domain/testfunction"
 	"github.com/compermane/ic-go/pkg/utils"
@@ -14,6 +16,7 @@ import (
 type Executor struct {
 	Sequences           []*sequence.Sequence			// Sequências geradas pelo algoritmo 
 	FunctionsList		[]*functions.Function 			// Lista de funções para serem testadas
+	ReceiversList		[]*receiver.Receiver			// Lista de receivers para serem testados
 	GlobalReceivers		map[string][]reflect.Value      // Mapa contendo todas os receivers retornados durante a execução do algoritmo
 }
 
@@ -23,6 +26,7 @@ type Executor struct {
  */ 
 func InitExecutor(fn_lst []any, rcvs_lst []any) *Executor {
 	lst  := make([]*functions.Function, 0)
+	rcvs := make([]*receiver.Receiver, 0)
 	glbl := make(map[string][]reflect.Value, 0)
 
 	// mtds := receiver.GetMethodsFromReceivers(rcvs_lst)
@@ -30,9 +34,14 @@ func InitExecutor(fn_lst []any, rcvs_lst []any) *Executor {
 		lst = append(lst, functions.GetFunction(fn))
 	}
 
+	for _, rcv := range rcvs_lst {
+		rcvs = append(rcvs, receiver.GetReceiver(rcv))
+	}
+	
 	return &Executor{
 		Sequences: make([]*sequence.Sequence, 0),
 		FunctionsList: lst,
+		ReceiversList: rcvs,
 		GlobalReceivers: glbl,
 	}
 }
@@ -43,7 +52,7 @@ func (exec *Executor) ExecuteTestFunc(fn *testfunction.TestFunction, args []refl
 	go func() {
 		defer func() {
 			if r := recover(); r != nil {
-				fmt.Printf("Exception during execution of %v: %v\n", fn.Name, r)
+				// fmt.Printf("Exception during execution of %v: %v\n", fn.Name, r)
 				fn.HasError = true
 				fn.Error = r
 
@@ -57,6 +66,7 @@ func (exec *Executor) ExecuteTestFunc(fn *testfunction.TestFunction, args []refl
 	
 	select {
 	case ok = <-result_chan:
+		fn.HasError = false
 		return ok
 	case <-time.After(timeout):
 		fmt.Printf("Function %v timedout after %v\n", fn.Name, timeout)
@@ -64,14 +74,22 @@ func (exec *Executor) ExecuteTestFunc(fn *testfunction.TestFunction, args []refl
 	}		
 }
 
+/* Entry for Randoop's algorithm.
+ * :param nonErrorSequences: List of non error sequences. Should initially be empty, with only the nil sequence.
+ * :param errorSequences: List of error sequences. Should initially be empty.
+ * :param debug: Flag for displaying the algorithm information on the terminal.
+ * :param timeout: Time in seconds for function execution timeout. A sequence is put on errorSequences if the timeout is violated.
+ * :returns: list of resulting error sequences and non error sequences for algorithm interation.
+ */
 func (exec *Executor) Randoop(nonErrorSequences []*sequence.Sequence, 
 							  errorSequences 	[]*sequence.Sequence,
 							  debug 			bool,
+							  create_structs    bool,
 							  timeout           time.Duration) ([]*sequence.Sequence, []*sequence.Sequence) {
 	error_type    := reflect.TypeOf((*error)(nil)).Elem()
 	fn  		  := functions.ChooseRandom(exec.FunctionsList)
 	seq           := sequence.ChooseRandom(nonErrorSequences)
-	args 		  := SetFuncArgs(fn, seq, exec.GlobalReceivers)
+	args 		  := SetFuncArgs(fn, seq, exec.ReceiversList, exec.GlobalReceivers, create_structs)
 	reflect_args  := utils.ArgToReflectValue(args, fn.HasVariadic, fn)
 	test_function := testfunction.NewTestFunction(fn, reflect_args)
 	
@@ -218,7 +236,8 @@ func (exec *Executor) Randoop(nonErrorSequences []*sequence.Sequence,
 }
 
 
-/* Main entry for GODO algorithm.
+/* Main entry for GODO algorithm. 
+ *
  * :param fns: List of functions
  * :param rcvs: List of receivers
  * :param algorithm: Algorithm for GODO execution
@@ -228,8 +247,9 @@ func (exec *Executor) Randoop(nonErrorSequences []*sequence.Sequence,
  * :param debug: Show information on the terminal
  * :param dump: Dump collected information on files
  * :returns: Pointer to an executor
+ *
  */
-func ExecuteFuncs(fns, rcvs []any, algorithm string, no_runs, duration, timeout int, debug bool, dump bool) *Executor {
+func ExecuteFuncs(fns, rcvs []any, algorithm string, no_runs, duration, timeout int, debug bool, dump bool, iteration int) *Executor {
 	exec := InitExecutor(fns, rcvs)
 	func_timeout := time.Duration(timeout) * time.Second
 
@@ -288,7 +308,109 @@ func ExecuteFuncs(fns, rcvs []any, algorithm string, no_runs, duration, timeout 
 		nonErrorSequences = append(nonErrorSequences, nil)
 		if no_runs > 0 {
 			for i := 0; i < no_runs; i++ {
-				nonErrorSequences, errorSequences = exec.Randoop(nonErrorSequences, errorSequences, debug, time.Duration(func_timeout))
+				nonErrorSequences, errorSequences = exec.Randoop(nonErrorSequences, errorSequences, debug, false, time.Duration(func_timeout))
+				runtime.GC()
+			}
+			if dump {
+				non_error := "-------------------Non error sequences-------------------\n"
+				err_seq   := "-------------------Error sequences-----------------------\n"
+
+				for i, seq := range nonErrorSequences {
+					if seq != nil {
+						non_error += fmt.Sprintf("Sequence %v: %v\n", i, seq.String())
+					}
+				}
+				for i, seq := range errorSequences {
+					if seq != nil {
+						err_seq += fmt.Sprintf("Sequence %v: %v\n", i, seq.String())
+					}
+				}
+				untested, err := getUntestedFuncs(nonErrorSequences, errorSequences, exec.FunctionsList)
+
+				utils.DumpToFile(fmt.Sprintf("untested_functions-%v.txt", iteration), untested)
+				utils.DumpToFile(fmt.Sprintf("error_functions-%v.txt", iteration), err)
+				utils.DumpToFile(fmt.Sprintf("error_sequences-%v.txt", iteration), err_seq)
+				utils.DumpToFile(fmt.Sprintf("non_error_sequences-%v.txt", iteration), non_error)
+			} else {
+				for i, seq := range nonErrorSequences {
+					if seq != nil {
+						fmt.Printf("Sequence %v: %v\n", i, seq.String())
+					}
+				}
+			}
+			fmt.Println("-----------Generated Objects----------")
+			for struct_type, values := range exec.GlobalReceivers {
+				fmt.Printf("%v: ", struct_type)
+				for _, value := range values {
+					fmt.Printf("%+v ", value)
+				}
+				fmt.Println()
+			}
+		} else if duration > 0 {
+			duration := time.Duration(duration) * time.Second
+			timer := time.After(duration)
+			
+			n := 0
+			for {
+				select {
+				case <-timer:
+					fmt.Printf("Executed %v funcs\n\n", n)
+
+					if dump {
+						non_error := "-------------------Non error sequences-------------------\n"
+						err_seq   := "-------------------Error sequences-----------------------\n"
+
+						for i, seq := range nonErrorSequences {
+							if seq != nil {
+								non_error += fmt.Sprintf("Sequence %v: %v\n", i, seq.String())
+							}
+						}
+						for i, seq := range errorSequences {
+							if seq != nil {
+								err_seq += fmt.Sprintf("Sequence %v: %v\n", i, seq.String())
+							}
+						}
+						untested, err := getUntestedFuncs(nonErrorSequences, errorSequences, exec.FunctionsList)
+
+					utils.DumpToFile(fmt.Sprintf("untested_functions-%v.txt", iteration), untested)
+					utils.DumpToFile(fmt.Sprintf("error_functions-%v.txt", iteration), err)
+					utils.DumpToFile(fmt.Sprintf("error_sequences-%v.txt", iteration), err_seq)
+					utils.DumpToFile(fmt.Sprintf("non_error_sequences-%v.txt", iteration), non_error)
+					} else {
+						for i, seq := range nonErrorSequences {
+							if seq != nil {
+								fmt.Printf("Sequence %v: %v\n", i, seq.String())
+							}
+						}
+					}
+					fmt.Println("-----------Generated Objects----------")
+					for struct_type, values := range exec.GlobalReceivers {
+						fmt.Printf("%v: ", struct_type)
+						for _, value := range values {
+							fmt.Printf("%+v ", value)
+						}
+						fmt.Println()
+					}
+					return exec
+				default:
+					nonErrorSequences, errorSequences = exec.Randoop(nonErrorSequences, errorSequences, debug, false, time.Duration(func_timeout))
+					runtime.GC()
+					n = n + 1
+				}
+			}
+		} else {
+			panic("Invalid number of runs or timeout duration\n")
+		}
+	case "feedback_directed_struct_generation":
+		nonErrorSequences := make([]*sequence.Sequence, 0)
+		errorSequences    := make([]*sequence.Sequence, 0)
+		
+		nonErrorSequences = append(nonErrorSequences, nil)
+		if no_runs > 0 {
+			fmt.Println("BRUH")
+			for i := 0; i < no_runs; i++ {
+				nonErrorSequences, errorSequences = exec.Randoop(nonErrorSequences, errorSequences, debug, true, time.Duration(func_timeout))
+				runtime.GC()
 			}
 			if dump {
 				non_error := "-------------------Non error sequences-------------------\n"
@@ -317,17 +439,18 @@ func ExecuteFuncs(fns, rcvs []any, algorithm string, no_runs, duration, timeout 
 					}
 				}
 			}
-			fmt.Println("-----------Generated Objects----------")
-			for struct_type, values := range exec.GlobalReceivers {
-				fmt.Printf("%v: ", struct_type)
-				for _, value := range values {
-					fmt.Printf("%+v ", value)
-				}
-				fmt.Println()
-			}
+			// fmt.Println("-----------Generated Objects----------")
+			// for struct_type, values := range exec.GlobalReceivers {
+			// 	fmt.Printf("%v: ", struct_type)
+			// 	for _, value := range values {
+			// 		fmt.Printf("%+v ", value)
+			// 	}
+			// 	fmt.Println()
+			// }
 		} else if timeout > 0 {
-			timeout := time.Duration(timeout) * time.Second
-			timer := time.After(timeout)
+			fmt.Println("AAAAA")
+			duration := time.Duration(duration) * time.Second
+			timer := time.After(duration)
 			
 			n := 0
 			for {
@@ -336,11 +459,10 @@ func ExecuteFuncs(fns, rcvs []any, algorithm string, no_runs, duration, timeout 
 					fmt.Printf("Executed %v funcs\n\n", n)
 					return exec
 				default:
-					exec.Randoop(nonErrorSequences, errorSequences, debug, time.Duration(func_timeout))
+					exec.Randoop(nonErrorSequences, errorSequences, debug, true, time.Duration(func_timeout))
 					n = n + 1
 				}
 			}
-
 		} else {
 			panic("Invalid number of runs or timeout duration\n")
 		}

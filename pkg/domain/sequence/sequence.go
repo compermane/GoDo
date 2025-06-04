@@ -134,11 +134,10 @@ func (sq *Sequence) AppendReturnedValue(return_type string, value reflect.Value)
  */
 func (sq *Sequence) GetRandomReturnedValue(value_type string) (reflect.Value, bool) {
 	val, ok := sq.ReturnedValues[value_type]
-
 	if !ok {
 		return reflect.Zero(reflect.TypeOf((*any)(nil))), false
 	}
-
+	
 	slice := reflect.ValueOf(val)
 	if slice.Kind() != reflect.Slice {
 		return reflect.Zero(reflect.TypeOf((*any)(nil))), false
@@ -146,7 +145,7 @@ func (sq *Sequence) GetRandomReturnedValue(value_type string) (reflect.Value, bo
 	if slice.Len() == 0 {
 		return reflect.Zero(reflect.TypeOf((*any)(nil))), false
 	}
-
+	
 	source := rand.NewSource(time.Now().UnixNano())
 	rng	   := rand.New(source)
 
