@@ -82,6 +82,9 @@ func VerifyDuplicate(seqs []*Sequence) bool {
 	return false
 }
 
+func VerifyExistenceByHash(seqs_hash_map map[uint64]bool, seq_hash uint64) bool {
+	return verify_existence_by_hash(seqs_hash_map, seq_hash)
+}
 /* Concatenates one sequence to another.
  * :param seq: sequence concatenated to the sq receiver
  * :returns: new sequence

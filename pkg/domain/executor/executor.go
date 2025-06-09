@@ -66,7 +66,9 @@ func (exec *Executor) ExecuteTestFunc(fn *testfunction.TestFunction, args []refl
 	
 	select {
 	case ok = <-result_chan:
-		fn.HasError = false
+		if ok {
+			fn.HasError = false
+		}
 		return ok
 	case <-time.After(timeout):
 		fmt.Printf("Function %v timedout after %v\n", fn.Name, timeout)
@@ -81,11 +83,12 @@ func (exec *Executor) ExecuteTestFunc(fn *testfunction.TestFunction, args []refl
  * :param timeout: Time in seconds for function execution timeout. A sequence is put on errorSequences if the timeout is violated.
  * :returns: list of resulting error sequences and non error sequences for algorithm interation.
  */
-func (exec *Executor) Randoop(nonErrorSequences []*sequence.Sequence, 
-							  errorSequences 	[]*sequence.Sequence,
-							  debug 			bool,
-							  create_structs    bool,
-							  timeout           time.Duration) ([]*sequence.Sequence, []*sequence.Sequence) {
+func (exec *Executor) Randoop(nonErrorSequences   []*sequence.Sequence, 
+							  errorSequences 	  []*sequence.Sequence,
+							  debug 		 	  bool,
+							  create_structs      bool,
+							  timeout             time.Duration,
+							  error_sequences_map map[uint64]bool) ([]*sequence.Sequence, []*sequence.Sequence) {
 	error_type    := reflect.TypeOf((*error)(nil)).Elem()
 	fn  		  := functions.ChooseRandom(exec.FunctionsList)
 	seq           := sequence.ChooseRandom(nonErrorSequences)
@@ -114,14 +117,27 @@ func (exec *Executor) Randoop(nonErrorSequences []*sequence.Sequence,
 	// Tratar já existência da sequência a ser formada
 	if seq == nil {
 		verify_seq := sequence.NewSequence([]*testfunction.TestFunction{test_function})
-		if sequence.VerifyExistence(nonErrorSequences, verify_seq) || sequence.VerifyExistence(errorSequences, verify_seq) {
-			return nonErrorSequences, errorSequences
+		if error_sequences_map != nil {
+			if sequence.VerifyExistence(nonErrorSequences, verify_seq) || sequence.VerifyExistence(errorSequences, verify_seq) {
+				return nonErrorSequences, errorSequences
+			}
+		} else {
+			// Aqui, verificar existência em nonErrorSequences pode ser otimizado
+			if sequence.VerifyExistenceByHash(error_sequences_map, verify_seq.SequenceID) || sequence.VerifyExistence(nonErrorSequences, verify_seq) {
+				return nonErrorSequences, errorSequences
+			}
 		}
 
 	} else {
 		verify_seq := seq.AppendSequence(sequence.NewSequence([]*testfunction.TestFunction{test_function}))
-		if sequence.VerifyExistence(nonErrorSequences, verify_seq) || sequence.VerifyExistence(errorSequences, verify_seq) {
-			return nonErrorSequences, errorSequences
+		if error_sequences_map != nil {
+			if sequence.VerifyExistence(nonErrorSequences, verify_seq) || sequence.VerifyExistence(errorSequences, verify_seq) {
+				return nonErrorSequences, errorSequences
+			}
+		} else {
+			if sequence.VerifyExistence(nonErrorSequences, verify_seq) || sequence.VerifyExistenceByHash(error_sequences_map, verify_seq.SequenceID) {
+				return nonErrorSequences, errorSequences
+			}
 		}
 	}
 
@@ -249,69 +265,30 @@ func (exec *Executor) Randoop(nonErrorSequences []*sequence.Sequence,
  * :returns: Pointer to an executor
  *
  */
-func ExecuteFuncs(fns, rcvs []any, algorithm string, no_runs, duration, timeout int, debug bool, dump bool, iteration int) *Executor {
+func ExecuteFuncs(fns, rcvs []any, algorithm string, no_runs, duration, timeout int, debugOpts DebugOpts) *Executor {
 	exec := InitExecutor(fns, rcvs)
 	func_timeout := time.Duration(timeout) * time.Second
 
+	var errorSequencesHashMap map[uint64]bool = nil
+	var untestedFuctions      map[string]bool = exec.makeMapOfFunctions()
+	var errorFunctions       map[string]bool = exec.makeMapOfFunctions()
+
+	if debugOpts.UseSequenceHashMap {
+		errorSequencesHashMap = make(map[uint64]bool, 0)
+	}
+
 	switch algorithm {
-	case "baseline1":
-		if no_runs > 0 {
-			for i := 0; i < no_runs; i++ {
-				// exec.SimpleExecution()
-			}
-		} else if duration > 0 {
-			duration := time.Duration(duration) * time.Second
-			timer := time.After(duration)
-			
-			n := 0
-			for {
-				select {
-				case <-timer:
-					fmt.Printf("Executed %v funcs\n\n", n)
-					return exec
-				default:
-					// exec.SimpleExecution()
-					n = n + 1
-				}
-			}
-		} else {
-			panic("Invalid number of runs or timeout duration\n")
-		}
-	case "baseline2":
-		if no_runs > 0 {
-			for i := 0; i < no_runs; i++ {
-				fmt.Println(i)
-				// exec.ExecuteSequences()
-			}
-		} else if duration > 0 {
-			duration := time.Duration(duration) * time.Second
-			timer := time.After(duration)
-			
-			n := 0
-			for {
-				select {
-				case <-timer:
-					fmt.Printf("Executed %v funcs\n\n", n)
-					return exec
-				default:
-					// exec.SimpleExecution()
-					n = n + 1
-				}
-			}
-		} else {
-			panic("Invalid number of runs or timeout duration\n")
-		}
 	case "feedback_directed":
-		nonErrorSequences := make([]*sequence.Sequence, 0)
-		errorSequences    := make([]*sequence.Sequence, 0)
-		
+		nonErrorSequences     := make([]*sequence.Sequence, 0)
+		errorSequences        := make([]*sequence.Sequence, 0)
+
 		nonErrorSequences = append(nonErrorSequences, nil)
 		if no_runs > 0 {
 			for i := 0; i < no_runs; i++ {
-				nonErrorSequences, errorSequences = exec.Randoop(nonErrorSequences, errorSequences, debug, false, time.Duration(func_timeout))
+				nonErrorSequences, errorSequences = exec.Randoop(nonErrorSequences, errorSequences, debugOpts.Debug, false, time.Duration(func_timeout), errorSequencesHashMap)
 				runtime.GC()
 			}
-			if dump {
+			if debugOpts.Dump {
 				non_error := "-------------------Non error sequences-------------------\n"
 				err_seq   := "-------------------Error sequences-----------------------\n"
 
@@ -325,26 +302,22 @@ func ExecuteFuncs(fns, rcvs []any, algorithm string, no_runs, duration, timeout 
 						err_seq += fmt.Sprintf("Sequence %v: %v\n", i, seq.String())
 					}
 				}
-				untested, err := getUntestedFuncs(nonErrorSequences, errorSequences, exec.FunctionsList)
+				updateUntestedFunctions(errorSequences, untestedFuctions)
+				updateUntestedFunctions(nonErrorSequences, untestedFuctions)
+				updateErrorFunctions(errorSequences, errorFunctions)
+				untested := getUntestedFuncs(untestedFuctions)
+				err      := getErrorFuncs(errorFunctions)
 
-				utils.DumpToFile(fmt.Sprintf("untested_functions-%v.txt", iteration), untested)
-				utils.DumpToFile(fmt.Sprintf("error_functions-%v.txt", iteration), err)
-				utils.DumpToFile(fmt.Sprintf("error_sequences-%v.txt", iteration), err_seq)
-				utils.DumpToFile(fmt.Sprintf("non_error_sequences-%v.txt", iteration), non_error)
+				utils.DumpToFile(fmt.Sprintf("untested_functions-%v.txt", debugOpts.Iteration), untested)
+				utils.DumpToFile(fmt.Sprintf("error_functions-%v.txt", debugOpts.Iteration), err)
+				utils.DumpToFile(fmt.Sprintf("error_sequences-%v.txt", debugOpts.Iteration), err_seq)
+				utils.DumpToFile(fmt.Sprintf("non_error_sequences-%v.txt", debugOpts.Iteration), non_error)
 			} else {
 				for i, seq := range nonErrorSequences {
 					if seq != nil {
 						fmt.Printf("Sequence %v: %v\n", i, seq.String())
 					}
 				}
-			}
-			fmt.Println("-----------Generated Objects----------")
-			for struct_type, values := range exec.GlobalReceivers {
-				fmt.Printf("%v: ", struct_type)
-				for _, value := range values {
-					fmt.Printf("%+v ", value)
-				}
-				fmt.Println()
 			}
 		} else if duration > 0 {
 			duration := time.Duration(duration) * time.Second
@@ -356,7 +329,7 @@ func ExecuteFuncs(fns, rcvs []any, algorithm string, no_runs, duration, timeout 
 				case <-timer:
 					fmt.Printf("Executed %v funcs\n\n", n)
 
-					if dump {
+					if debugOpts.Dump {
 						non_error := "-------------------Non error sequences-------------------\n"
 						err_seq   := "-------------------Error sequences-----------------------\n"
 
@@ -370,12 +343,16 @@ func ExecuteFuncs(fns, rcvs []any, algorithm string, no_runs, duration, timeout 
 								err_seq += fmt.Sprintf("Sequence %v: %v\n", i, seq.String())
 							}
 						}
-						untested, err := getUntestedFuncs(nonErrorSequences, errorSequences, exec.FunctionsList)
+						updateUntestedFunctions(errorSequences, untestedFuctions)
+						updateUntestedFunctions(nonErrorSequences, untestedFuctions)
+						updateErrorFunctions(errorSequences, errorFunctions)
 
-					utils.DumpToFile(fmt.Sprintf("untested_functions-%v.txt", iteration), untested)
-					utils.DumpToFile(fmt.Sprintf("error_functions-%v.txt", iteration), err)
-					utils.DumpToFile(fmt.Sprintf("error_sequences-%v.txt", iteration), err_seq)
-					utils.DumpToFile(fmt.Sprintf("non_error_sequences-%v.txt", iteration), non_error)
+						untested := getUntestedFuncs(untestedFuctions)
+						err      := getErrorFuncs(errorFunctions)
+						utils.DumpToFile(fmt.Sprintf("untested_functions-%v.txt", debugOpts.Iteration), untested)
+						utils.DumpToFile(fmt.Sprintf("error_functions-%v.txt", debugOpts.Iteration), err)
+						utils.DumpToFile(fmt.Sprintf("error_sequences-%v.txt", debugOpts.Iteration), err_seq)
+						utils.DumpToFile(fmt.Sprintf("non_error_sequences-%v.txt", debugOpts.Iteration), non_error)
 					} else {
 						for i, seq := range nonErrorSequences {
 							if seq != nil {
@@ -383,36 +360,49 @@ func ExecuteFuncs(fns, rcvs []any, algorithm string, no_runs, duration, timeout 
 							}
 						}
 					}
-					fmt.Println("-----------Generated Objects----------")
-					for struct_type, values := range exec.GlobalReceivers {
-						fmt.Printf("%v: ", struct_type)
-						for _, value := range values {
-							fmt.Printf("%+v ", value)
-						}
-						fmt.Println()
-					}
 					return exec
 				default:
-					nonErrorSequences, errorSequences = exec.Randoop(nonErrorSequences, errorSequences, debug, false, time.Duration(func_timeout))
+					nonErrorSequences, errorSequences = exec.Randoop(nonErrorSequences, errorSequences, debugOpts.Debug, false, time.Duration(func_timeout), errorSequencesHashMap)
+
+					// Update hash map e untested functions
+					if debugOpts.UseSequenceHashMap {
+						errorSequencesHashMap = sequence.UpdateHashMap(errorSequencesHashMap, errorSequences)
+						
+						updateErrorFunctions(errorSequences, errorFunctions)
+						updateUntestedFunctions(errorSequences, untestedFuctions)
+						updateUntestedFunctions(nonErrorSequences, untestedFuctions)
+					}
+
 					runtime.GC()
 					n = n + 1
+
+					if len(errorSequences) % 2000 == 0 && debugOpts.UseSequenceHashMap {
+						err_seq := ""
+						for i, seq := range errorSequences {
+							if seq != nil {
+								err_seq += fmt.Sprintf("Sequence %v: %v\n", i, seq.String())
+							}
+						}	
+						utils.DumpToFile(fmt.Sprintf("error_sequences-%v.txt", debugOpts.Iteration), err_seq)
+						errorSequences = nil
+						errorSequences = make([]*sequence.Sequence, 0)
+					}
 				}
 			}
 		} else {
 			panic("Invalid number of runs or timeout duration\n")
 		}
 	case "feedback_directed_struct_generation":
-		nonErrorSequences := make([]*sequence.Sequence, 0)
-		errorSequences    := make([]*sequence.Sequence, 0)
+		nonErrorSequences     := make([]*sequence.Sequence, 0)
+		errorSequences        := make([]*sequence.Sequence, 0)
 		
 		nonErrorSequences = append(nonErrorSequences, nil)
 		if no_runs > 0 {
-			fmt.Println("BRUH")
 			for i := 0; i < no_runs; i++ {
-				nonErrorSequences, errorSequences = exec.Randoop(nonErrorSequences, errorSequences, debug, true, time.Duration(func_timeout))
+				nonErrorSequences, errorSequences = exec.Randoop(nonErrorSequences, errorSequences, debugOpts.Debug, true, time.Duration(func_timeout), errorSequencesHashMap)
 				runtime.GC()
 			}
-			if dump {
+			if debugOpts.Dump {
 				non_error := "-------------------Non error sequences-------------------\n"
 				err_seq   := "-------------------Error sequences-----------------------\n"
 
@@ -426,7 +416,11 @@ func ExecuteFuncs(fns, rcvs []any, algorithm string, no_runs, duration, timeout 
 						err_seq += fmt.Sprintf("Sequence %v: %v\n", i, seq.String())
 					}
 				}
-				untested, err := getUntestedFuncs(nonErrorSequences, errorSequences, exec.FunctionsList)
+				updateUntestedFunctions(errorSequences, untestedFuctions)
+				updateUntestedFunctions(nonErrorSequences, untestedFuctions)
+				updateErrorFunctions(errorSequences, errorFunctions)
+				untested := getUntestedFuncs(untestedFuctions)
+				err      := getErrorFuncs(errorFunctions)
 
 				utils.DumpToFile("untested_functions.txt", untested)
 				utils.DumpToFile("error_functions.txt", err)
@@ -439,16 +433,8 @@ func ExecuteFuncs(fns, rcvs []any, algorithm string, no_runs, duration, timeout 
 					}
 				}
 			}
-			// fmt.Println("-----------Generated Objects----------")
-			// for struct_type, values := range exec.GlobalReceivers {
-			// 	fmt.Printf("%v: ", struct_type)
-			// 	for _, value := range values {
-			// 		fmt.Printf("%+v ", value)
-			// 	}
-			// 	fmt.Println()
-			// }
+
 		} else if timeout > 0 {
-			fmt.Println("AAAAA")
 			duration := time.Duration(duration) * time.Second
 			timer := time.After(duration)
 			
@@ -459,7 +445,7 @@ func ExecuteFuncs(fns, rcvs []any, algorithm string, no_runs, duration, timeout 
 					fmt.Printf("Executed %v funcs\n\n", n)
 					return exec
 				default:
-					exec.Randoop(nonErrorSequences, errorSequences, debug, true, time.Duration(func_timeout))
+					exec.Randoop(nonErrorSequences, errorSequences, debugOpts.Debug, true, time.Duration(func_timeout), errorSequencesHashMap)
 					n = n + 1
 				}
 			}

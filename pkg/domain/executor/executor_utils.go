@@ -14,10 +14,27 @@ import (
 	"github.com/compermane/ic-go/pkg/utils"
 )
 
+type DebugOpts struct {
+	Dump               bool
+	Debug              bool
+	UseSequenceHashMap bool
+	Iteration          int
+}
+
 func (exec *Executor) PrintFunctions() {
 	for _, fn := range exec.FunctionsList {
 		fmt.Println(fn.Name)
 	}
+}
+
+func (exec *Executor) makeMapOfFunctions() map[string]bool {
+	tested_function_map := make(map[string]bool, 0)
+
+	for _, fn := range exec.FunctionsList {
+		tested_function_map[fn.Name] = false	
+	}
+
+	return tested_function_map
 }
 
 /* Sets function arguments. Its values should be the same througout the whole execution of GODO.
@@ -43,7 +60,7 @@ func (exec *Executor) PrintFunctions() {
 			value, _ = utils.Float32Generator()
 		} else if (tp == "int" || tpe == "int") {
 			list_arg_flag = false
-			value, _ = utils.IntGenerator(-32, 32)
+			value, _ = utils.IntGenerator(-1, 2)
 		} else if (tp == "int64") {
 			list_arg_flag = false
 			value, _ = utils.Int64Generator()
@@ -130,7 +147,7 @@ func (exec *Executor) PrintFunctions() {
 						case 0:
 							reflect_value, ok := seq.GetRandomReturnedValue(struct_name)
 							if ok {
-								fmt.Printf("CASE 0: %+v\n", reflect_value)
+								fmt.Printf("CASE 0: %+v\n", fn.Name)
 								value          = reflect_value
 							} else {
 								value          = nil
@@ -253,25 +270,53 @@ func (exec *Executor) AppendGlobalStruct(value_type string, value reflect.Value)
 	}
 }
 
-func getUntestedFuncs(nonErrorSeqs, errorSeqs []*sequence.Sequence, funcs []*functions.Function) (string, string) {
-	nonErrorSeqsAppearences := makeMap(nonErrorSeqs)
-	errorSeqsAppearences    := makeMap(errorSeqs)
+func updateUntestedFunctions(seqs []*sequence.Sequence, func_map map[string]bool) {
+	for _, seq := range seqs {
+		if seq == nil {
+			continue
+		}
+		for _, fn := range seq.Functions {
+			func_map[fn.Name] = true
+		}
+	}
+}
 
+func updateErrorFunctions(seqs []*sequence.Sequence, func_map map[string]bool) {
+	for _, seq := range seqs {
+		for _, fn := range seq.Functions {
+			if fn.HasError {
+				func_map[fn.Name] = true
+			} else {
+				if func_map[fn.Name] {
+					func_map[fn.Name] = false
+				}
+			}
+		}
+	}
+}
+
+func getUntestedFuncs(func_map map[string]bool) string {
 	str_untested := ""
-	str_error    := ""
-	for _, fn := range funcs {
-		_, ok1 := nonErrorSeqsAppearences[fn.Name]
-		err, ok2 := errorSeqsAppearences[fn.Name]
 
-		if !ok1 && !ok2 {
-			str_untested += fn.Name + "\n"
-		} 
-		if !ok1 && ok2 {
-			str_error    += fn.Name + ": " + err + "\n"
+	for key, value := range func_map {
+		if !value {
+			str_untested += key + "\n"
 		}
 	}
 
-	return str_untested, str_error
+	return str_untested
+}
+
+func getErrorFuncs(func_map map[string]bool) string {
+	str_error := ""
+
+	for key, value := range func_map {
+		if value {
+			str_error += key + "\n"
+		}
+	}
+
+	return str_error
 }
 
 func makeMap(seqs []*sequence.Sequence) map[string]string {

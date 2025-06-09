@@ -263,7 +263,7 @@ func Uint8Generator(params ...int) uint8 {
 }
 
 func DumpToFile(file_name string, content string) {
-	file, err := os.OpenFile(file_name, os.O_TRUNC | os.O_CREATE | os.O_WRONLY, 0644)
+	file, err := os.OpenFile(file_name, os.O_APPEND | os.O_CREATE | os.O_WRONLY, 0644)
 
 	if err != nil {
 		panic("Error creating file")
