@@ -271,7 +271,8 @@ func ExecuteFuncs(fns, rcvs []any, algorithm string, no_runs, duration, timeout 
 
 	var errorSequencesHashMap map[uint64]bool = nil
 	var untestedFuctions      map[string]bool = exec.makeMapOfFunctions()
-	var errorFunctions       map[string]bool = exec.makeMapOfFunctions()
+	var errorFunctions        map[string]bool = exec.makeMapOfFunctions()
+	var dumpCounter           int = 0
 
 	if debugOpts.UseSequenceHashMap {
 		errorSequencesHashMap = make(map[uint64]bool, 0)
@@ -308,10 +309,10 @@ func ExecuteFuncs(fns, rcvs []any, algorithm string, no_runs, duration, timeout 
 				untested := getUntestedFuncs(untestedFuctions)
 				err      := getErrorFuncs(errorFunctions)
 
-				utils.DumpToFile(fmt.Sprintf("untested_functions-%v.txt", debugOpts.Iteration), untested)
-				utils.DumpToFile(fmt.Sprintf("error_functions-%v.txt", debugOpts.Iteration), err)
-				utils.DumpToFile(fmt.Sprintf("error_sequences-%v.txt", debugOpts.Iteration), err_seq)
-				utils.DumpToFile(fmt.Sprintf("non_error_sequences-%v.txt", debugOpts.Iteration), non_error)
+				utils.DumpToFile(fmt.Sprintf("untested_functions-%v.txt", debugOpts.Iteration), untested, 0)
+				utils.DumpToFile(fmt.Sprintf("error_functions-%v.txt", debugOpts.Iteration), err, 0)
+				utils.DumpToFile(fmt.Sprintf("error_sequences-%v.txt", debugOpts.Iteration), err_seq, 1)
+				utils.DumpToFile(fmt.Sprintf("non_error_sequences-%v.txt", debugOpts.Iteration), non_error, 0)
 			} else {
 				for i, seq := range nonErrorSequences {
 					if seq != nil {
@@ -340,7 +341,7 @@ func ExecuteFuncs(fns, rcvs []any, algorithm string, no_runs, duration, timeout 
 						}
 						for i, seq := range errorSequences {
 							if seq != nil {
-								err_seq += fmt.Sprintf("Sequence %v: %v\n", i, seq.String())
+								err_seq += fmt.Sprintf("Sequence %v: %v\n", (2000 * dumpCounter) + i, seq.String())
 							}
 						}
 						updateUntestedFunctions(errorSequences, untestedFuctions)
@@ -349,10 +350,10 @@ func ExecuteFuncs(fns, rcvs []any, algorithm string, no_runs, duration, timeout 
 
 						untested := getUntestedFuncs(untestedFuctions)
 						err      := getErrorFuncs(errorFunctions)
-						utils.DumpToFile(fmt.Sprintf("untested_functions-%v.txt", debugOpts.Iteration), untested)
-						utils.DumpToFile(fmt.Sprintf("error_functions-%v.txt", debugOpts.Iteration), err)
-						utils.DumpToFile(fmt.Sprintf("error_sequences-%v.txt", debugOpts.Iteration), err_seq)
-						utils.DumpToFile(fmt.Sprintf("non_error_sequences-%v.txt", debugOpts.Iteration), non_error)
+						utils.DumpToFile(fmt.Sprintf("untested_functions-%v.txt", debugOpts.Iteration), untested, 0)
+						utils.DumpToFile(fmt.Sprintf("error_functions-%v.txt", debugOpts.Iteration), err, 0)
+						utils.DumpToFile(fmt.Sprintf("error_sequences-%v.txt", debugOpts.Iteration), err_seq, 1)
+						utils.DumpToFile(fmt.Sprintf("non_error_sequences-%v.txt", debugOpts.Iteration), non_error, 0)
 					} else {
 						for i, seq := range nonErrorSequences {
 							if seq != nil {
@@ -380,10 +381,16 @@ func ExecuteFuncs(fns, rcvs []any, algorithm string, no_runs, duration, timeout 
 						err_seq := ""
 						for i, seq := range errorSequences {
 							if seq != nil {
-								err_seq += fmt.Sprintf("Sequence %v: %v\n", i, seq.String())
+								err_seq += fmt.Sprintf("Sequence %v: %v\n", (2000 * dumpCounter) + i, seq.String())
 							}
-						}	
-						utils.DumpToFile(fmt.Sprintf("error_sequences-%v.txt", debugOpts.Iteration), err_seq)
+						}
+
+						if dumpCounter == 0 {
+							utils.DumpToFile(fmt.Sprintf("error_sequences-%v.txt", debugOpts.Iteration), err_seq, 0)
+						} else {
+							utils.DumpToFile(fmt.Sprintf("error_sequences-%v.txt", debugOpts.Iteration), err_seq, 1)
+						}
+						dumpCounter++
 						errorSequences = nil
 						errorSequences = make([]*sequence.Sequence, 0)
 					}
@@ -422,10 +429,10 @@ func ExecuteFuncs(fns, rcvs []any, algorithm string, no_runs, duration, timeout 
 				untested := getUntestedFuncs(untestedFuctions)
 				err      := getErrorFuncs(errorFunctions)
 
-				utils.DumpToFile("untested_functions.txt", untested)
-				utils.DumpToFile("error_functions.txt", err)
-				utils.DumpToFile("error_sequences.txt", err_seq)
-				utils.DumpToFile("non_error_sequences.txt", non_error)
+				utils.DumpToFile("untested_functions.txt", untested, 0)
+				utils.DumpToFile("error_functions.txt", err, 1)
+				utils.DumpToFile("error_sequences.txt", err_seq, 1)
+				utils.DumpToFile("non_error_sequences.txt", non_error, 1)
 			} else {
 				for i, seq := range nonErrorSequences {
 					if seq != nil {

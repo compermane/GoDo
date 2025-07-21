@@ -262,18 +262,37 @@ func Uint8Generator(params ...int) uint8 {
 	return value
 }
 
-func DumpToFile(file_name string, content string) {
-	file, err := os.OpenFile(file_name, os.O_APPEND | os.O_CREATE | os.O_WRONLY, 0644)
+func DumpToFile(file_name string, content string, mode int) {
+	// 1: append 0: criar
+	if mode == 1 {
+		file, err := os.OpenFile(file_name, os.O_APPEND | os.O_CREATE | os.O_WRONLY, 0644)
+		if err != nil {
+			panic("Error creating file")
+		}
 
-	if err != nil {
-		panic("Error creating file")
-	}
+		defer file.Close()
 
-	defer file.Close()
+		_, err = fmt.Fprintln(file, content)
 
-	_, err = fmt.Fprintln(file, content)
+		if err != nil {
+			panic("Error writing to file")
+		}
 
-	if err != nil {
-		panic("Error writing to file")
+		return
+	} else if mode == 0 {
+		file, err := os.OpenFile(file_name, os.O_TRUNC | os.O_CREATE | os.O_WRONLY, 0644)
+		if err != nil {
+			panic("Error creating file")
+		}
+
+		defer file.Close()
+
+		_, err = fmt.Fprintln(file, content)
+
+		if err != nil {
+			panic("Error writing to file")
+		}
+		
+		return
 	}
 }	

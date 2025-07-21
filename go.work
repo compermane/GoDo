@@ -1,8 +1,17 @@
-go 1.21.3
+go 1.23.5
 
 use (
 	.
-	./testrepos/delve
-	./testrepos/hub
 	./testrepos/cobra
+	./testrepos/dive
+	./testrepos/logrus
+	./testrepos/nsq
+	./testrepos/echo
+	./testrepos/esbuild
+	./testrepos/fiber
+	./testrepos/fzf
+	./testrepos/gin
+	./testrepos/gorm
+	./testrepos/harness
+	./testrepos/kit
 )

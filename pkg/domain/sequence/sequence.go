@@ -180,12 +180,24 @@ func (sq *Sequence) ApplyExtensibleFlags(ret_type string, ret_value reflect.Valu
 	// o' = o for some o returned from the sequence
 	if exist {
 		for _, value := range vals {
-			not_equal = !reflect.DeepEqual(value.Interface(), ret_value.Interface())
-
-			if value.Kind() == reflect.Ptr && value.IsValid() {
-				not_equal = !reflect.DeepEqual(value.Elem().Interface(), ret_value.Elem().Interface())	
+			if !value.IsValid() || !value.CanInterface() || !ret_value.IsValid() || !ret_value.CanInterface() {
+				continue
 			}
-			
+
+			if reflect.DeepEqual(value.Interface(), ret_value.Interface()) {
+				not_equal = false
+			}
+
+			if value.Kind() == reflect.Ptr && value.IsValid() && !value.IsNil() && ret_value.Kind() == reflect.Ptr && ret_value.IsValid() && !ret_value.IsNil() {
+				v1 := value.Elem()
+				v2 := value.Elem()
+
+				if v1.IsValid() && v1.CanInterface() && v2.IsValid() && v2.CanInterface() {
+					if reflect.DeepEqual(v1.Interface(), v2.Interface()) {
+						not_equal = false
+					}
+				}
+			}
 		}
 	}
 

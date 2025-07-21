@@ -84,7 +84,7 @@ func (exec *Executor) makeMapOfFunctions() map[string]bool {
 			value = utils.Uint8Generator()
 		} else if (tp == "string") {
 			list_arg_flag = false
-			lenght, _ := utils.IntGenerator(1, 10)
+			lenght, _ := utils.IntGenerator(1, 5)
 			value = utils.StringGenerator(lenght)
 		} else if (tp == "bool") {
 			list_arg_flag = false
@@ -147,7 +147,6 @@ func (exec *Executor) makeMapOfFunctions() map[string]bool {
 						case 0:
 							reflect_value, ok := seq.GetRandomReturnedValue(struct_name)
 							if ok {
-								fmt.Printf("CASE 0: %+v\n", fn.Name)
 								value          = reflect_value
 							} else {
 								value          = nil
@@ -170,9 +169,7 @@ func (exec *Executor) makeMapOfFunctions() map[string]bool {
 						case 2:
 							if create_structs {
 								for _, rcv := range rcvs {
-									fmt.Println("TENTANDO ACHAR")
 									if struct_name == rcv.Name {
-										fmt.Println("ACHOU")
 										rcv.SetReceiverValues(rcvs)
 										value = CloneValue(rcv.Receiver)
 										break

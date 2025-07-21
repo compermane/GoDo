@@ -1,2 +1,6 @@
 anotacoes.txt
 /testrepos
+/benchmark/venv/
+/benchmark/__pycache__
+/benchmark/wrong.txt
+/benchmark/old
