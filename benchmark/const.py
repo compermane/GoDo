@@ -2,24 +2,24 @@ from typing import List
 
 non_error_sequences_dirs: List[str] = [
     # cobra
-    "../testrepos/cobra/godo_coverages/1min_runs/non_error_sequences",
-    "../testrepos/cobra/godo_coverages/5min_runs/non_error_sequences",
-    "../testrepos/cobra/godo_coverages/10min_runs/non_error_sequences",
-    "../testrepos/cobra/godo_coverages/30s_runs/non_error_sequences",
-    "../testrepos/cobra/godo_coverages/15s_runs/non_error_sequences",
+    # "../testrepos/cobra/godo_coverages/1min_runs/non_error_sequences",
+    # "../testrepos/cobra/godo_coverages/5min_runs/non_error_sequences",
+    # "../testrepos/cobra/godo_coverages/10min_runs/non_error_sequences",
+    # "../testrepos/cobra/godo_coverages/30s_runs/non_error_sequences",
+    # "../testrepos/cobra/godo_coverages/15s_runs/non_error_sequences",
     # dive
     # "../testrepos/dive/godo_coverages/1min_runs/non_error_sequences",
     # "../testrepos/dive/godo_coverages/5min_runs/non_error_sequences",
     # "../testrepos/dive/godo_coverages/10min_runs/non_error_sequences",
     # "../testrepos/dive/godo_coverages/30s_runs/non_error_sequences",
     # "../testrepos/dive/godo_coverages/15s_runs/non_error_sequences",
-    # # echo
+    # echo
     # "../testrepos/echo/godo_coverages/1min_runs/non_error_sequences",
     # "../testrepos/echo/godo_coverages/5min_runs/non_error_sequences",
     # "../testrepos/echo/godo_coverages/10min_runs/non_error_sequences",
     # "../testrepos/echo/godo_coverages/30s_runs/non_error_sequences",
     # "../testrepos/echo/godo_coverages/15s_runs/non_error_sequences",
-    # # esbuild
+    # esbuild
     # "../testrepos/esbuild/godo_coverages/1min_runs/non_error_sequences",
     # "../testrepos/esbuild/godo_coverages/5min_runs/non_error_sequences",
     # "../testrepos/esbuild/godo_coverages/10min_runs/non_error_sequences",
@@ -37,115 +37,190 @@ non_error_sequences_dirs: List[str] = [
     # "../testrepos/fzf/godo_coverages/10min_runs/non_error_sequences",
     # "../testrepos/fzf/godo_coverages/30s_runs/non_error_sequences",
     # "../testrepos/fzf/godo_coverages/15s_runs/non_error_sequences",
-    # # gin
+    # gin
     # "../testrepos/gin/godo_coverages/1min_runs/non_error_sequences",
     # "../testrepos/gin/godo_coverages/5min_runs/non_error_sequences",
     # "../testrepos/gin/godo_coverages/10min_runs/non_error_sequences",
     # "../testrepos/gin/godo_coverages/30s_runs/non_error_sequences",
     # "../testrepos/gin/godo_coverages/15s_runs/non_error_sequences",
-    # # gorm
+    # gorm
     # "../testrepos/gorm/godo_coverages/1min_runs/non_error_sequences",
     # "../testrepos/gorm/godo_coverages/5min_runs/non_error_sequences",
     # "../testrepos/gorm/godo_coverages/10min_runs/non_error_sequences",
     # "../testrepos/gorm/godo_coverages/30s_runs/non_error_sequences",
     # "../testrepos/gorm/godo_coverages/15s_runs/non_error_sequences",
-    # # harness
+    # harness
     # "../testrepos/harness/godo_coverages/1min_runs/non_error_sequences",
     # "../testrepos/harness/godo_coverages/5min_runs/non_error_sequences",
     # "../testrepos/harness/godo_coverages/10min_runs/non_error_sequences",
     # "../testrepos/harness/godo_coverages/30s_runs/non_error_sequences",
     # "../testrepos/harness/godo_coverages/15s_runs/non_error_sequences",
-    # # kit
+    # kit
     # "../testrepos/kit/godo_coverages/1min_runs/non_error_sequences",
     # "../testrepos/kit/godo_coverages/5min_runs/non_error_sequences",
     # "../testrepos/kit/godo_coverages/10min_runs/non_error_sequences",
     # "../testrepos/kit/godo_coverages/30s_runs/non_error_sequences",
     # "../testrepos/kit/godo_coverages/15s_runs/non_error_sequences",
-    # # logrus
+    # logrus
     # "../testrepos/logrus/godo_coverages/1min_runs/non_error_sequences",
     # "../testrepos/logrus/godo_coverages/5min_runs/non_error_sequences",
     # "../testrepos/logrus/godo_coverages/10min_runs/non_error_sequences",
     # "../testrepos/logrus/godo_coverages/30s_runs/non_error_sequences",
     # "../testrepos/logrus/godo_coverages/15s_runs/non_error_sequences",
-    # # nsq
+    # nsq
     # "../testrepos/nsq/godo_coverages/1min_runs/non_error_sequences",
     # "../testrepos/nsq/godo_coverages/5min_runs/non_error_sequences",
-    # "../testrepos/nsq/godo_coverages/10min_runs/non_error_sequences",
+    "../testrepos/nsq/godo_coverages/10min_runs/non_error_sequences",
     # "../testrepos/nsq/godo_coverages/30s_runs/non_error_sequences",
     # "../testrepos/nsq/godo_coverages/15s_runs/non_error_sequences",
 ]
 
 error_sequences_dirs: List[str] = [
-    # cobra
-    "../testrepos/cobra/godo_coverages/1min_runs/error_sequences",
-    "../testrepos/cobra/godo_coverages/5min_runs/error_sequences",
-    "../testrepos/cobra/godo_coverages/10min_runs/error_sequences",
-    "../testrepos/cobra/godo_coverages/30s_runs/error_sequences",
-    "../testrepos/cobra/godo_coverages/15s_runs/error_sequences",
+    # # cobra
+    # "../testrepos/cobra/godo_coverages/1min_runs/error_sequences",
+    # "../testrepos/cobra/godo_coverages/5min_runs/error_sequences",
+    # "../testrepos/cobra/godo_coverages/10min_runs/error_sequences",
+    # "../testrepos/cobra/godo_coverages/30s_runs/error_sequences",
+    # "../testrepos/cobra/godo_coverages/15s_runs/error_sequences",
     # # dive
     # "../testrepos/dive/godo_coverages/1min_runs/error_sequences",
     # "../testrepos/dive/godo_coverages/5min_runs/error_sequences",
     # "../testrepos/dive/godo_coverages/10min_runs/error_sequences",
     # "../testrepos/dive/godo_coverages/30s_runs/error_sequences",
     # "../testrepos/dive/godo_coverages/15s_runs/error_sequences",
-    # # echo
+    # echo
     # "../testrepos/echo/godo_coverages/1min_runs/error_sequences",
     # "../testrepos/echo/godo_coverages/5min_runs/error_sequences",
     # "../testrepos/echo/godo_coverages/10min_runs/error_sequences",
     # "../testrepos/echo/godo_coverages/30s_runs/error_sequences",
     # "../testrepos/echo/godo_coverages/15s_runs/error_sequences",
-    # # esbuild
+    # esbuild
     # "../testrepos/esbuild/godo_coverages/1min_runs/error_sequences",
     # "../testrepos/esbuild/godo_coverages/5min_runs/error_sequences",
     # "../testrepos/esbuild/godo_coverages/10min_runs/error_sequences",
     # "../testrepos/esbuild/godo_coverages/30s_runs/error_sequences",
     # "../testrepos/esbuild/godo_coverages/15s_runs/error_sequences",
-    # # fiber
+    # fiber
     # "../testrepos/fiber/godo_coverages/1min_runs/error_sequences",
     # "../testrepos/fiber/godo_coverages/5min_runs/error_sequences",
     # "../testrepos/fiber/godo_coverages/10min_runs/error_sequences",
     # "../testrepos/fiber/godo_coverages/30s_runs/error_sequences",
     # "../testrepos/fiber/godo_coverages/15s_runs/error_sequences",
-    # # fzf
+    # fzf
     # "../testrepos/fzf/godo_coverages/1min_runs/error_sequences",
     # "../testrepos/fzf/godo_coverages/5min_runs/error_sequences",
     # "../testrepos/fzf/godo_coverages/10min_runs/error_sequences",
     # "../testrepos/fzf/godo_coverages/30s_runs/error_sequences",
     # "../testrepos/fzf/godo_coverages/15s_runs/error_sequences",
-    # # gin
+    # gin
     # "../testrepos/gin/godo_coverages/1min_runs/error_sequences",
     # "../testrepos/gin/godo_coverages/5min_runs/error_sequences",
     # "../testrepos/gin/godo_coverages/10min_runs/error_sequences",
     # "../testrepos/gin/godo_coverages/30s_runs/error_sequences",
     # "../testrepos/gin/godo_coverages/15s_runs/error_sequences",
-    # # gorm
+    # gorm
     # "../testrepos/gorm/godo_coverages/1min_runs/error_sequences",
     # "../testrepos/gorm/godo_coverages/5min_runs/error_sequences",
     # "../testrepos/gorm/godo_coverages/10min_runs/error_sequences",
     # "../testrepos/gorm/godo_coverages/30s_runs/error_sequences",
     # "../testrepos/gorm/godo_coverages/15s_runs/error_sequences",
-    # # harness
+    # harness
     # "../testrepos/harness/godo_coverages/1min_runs/error_sequences",
     # "../testrepos/harness/godo_coverages/5min_runs/error_sequences",
     # "../testrepos/harness/godo_coverages/10min_runs/error_sequences",
     # "../testrepos/harness/godo_coverages/30s_runs/error_sequences",
     # "../testrepos/harness/godo_coverages/15s_runs/error_sequences",
-    # # kit
+    # kit
     # "../testrepos/kit/godo_coverages/1min_runs/error_sequences",
     # "../testrepos/kit/godo_coverages/5min_runs/error_sequences",
     # "../testrepos/kit/godo_coverages/10min_runs/error_sequences",
     # "../testrepos/kit/godo_coverages/30s_runs/error_sequences",
     # "../testrepos/kit/godo_coverages/15s_runs/error_sequences",
-    # # logrus
+    # logrus
     # "../testrepos/logrus/godo_coverages/1min_runs/error_sequences",
     # "../testrepos/logrus/godo_coverages/5min_runs/error_sequences",
     # "../testrepos/logrus/godo_coverages/10min_runs/error_sequences",
     # "../testrepos/logrus/godo_coverages/30s_runs/error_sequences",
     # "../testrepos/logrus/godo_coverages/15s_runs/error_sequences",
-    # # nsq
+    # nsq
     # "../testrepos/nsq/godo_coverages/1min_runs/error_sequences",
     # "../testrepos/nsq/godo_coverages/5min_runs/error_sequences",
-    # "../testrepos/nsq/godo_coverages/10min_runs/error_sequences",
+    "../testrepos/nsq/godo_coverages/10min_runs/error_sequences",
     # "../testrepos/nsq/godo_coverages/30s_runs/error_sequences",
     # "../testrepos/nsq/godo_coverages/15s_runs/error_sequences",
+]
+
+coverages_dirs = [
+    # cobra
+    # "../testrepos/cobra/godo_main/1min_run_info/output",
+    # "../testrepos/cobra/godo_main/5min_run_info/output",
+    # "../testrepos/cobra/godo_main/10min_run_info/output",
+    # "../testrepos/cobra/godo_main/30s_run_info/output",
+    # "../testrepos/cobra/godo_main/15s_run_info/output",
+    # dive
+    # "../testrepos/dive/godo_main/1min_run_info/output",
+    # "../testrepos/dive/godo_main/5min_run_info/output",
+    # "../testrepos/dive/godo_main/10min_run_info/output",
+    # "../testrepos/dive/godo_main/30s_run_info/output",
+    # "../testrepos/dive/godo_main/15s_run_info/output",
+    # echo
+    # "../testrepos/echo/godo_main/1min_run_info/output",
+    # "../testrepos/echo/godo_main/5min_run_info/output",
+    # "../testrepos/echo/godo_main/10min_run_info/output",
+    # "../testrepos/echo/godo_main/30s_run_info/output",
+    # "../testrepos/echo/godo_main/15s_run_info/output",
+    # esbuild
+    # "../testrepos/esbuild/godo_main/1min_run_info/output",
+    # "../testrepos/esbuild/godo_main/5min_run_info/output",
+    # "../testrepos/esbuild/godo_main/10min_run_info/output",
+    # "../testrepos/esbuild/godo_main/30s_run_info/output",
+    # "../testrepos/esbuild/godo_main/15s_run_info/output",
+    # # fiber
+    # "../testrepos/fiber/godo_main/1min_run_info/output",
+    # "../testrepos/fiber/godo_main/5min_run_info/output",
+    # "../testrepos/fiber/godo_main/10min_run_info/output",
+    # "../testrepos/fiber/godo_main/30s_run_info/output",
+    # "../testrepos/fiber/godo_main/15s_run_info/output",
+    # # fzf
+    # "../testrepos/fzf/godo_main/1min_run_info/output",
+    # "../testrepos/fzf/godo_main/5min_run_info/output",
+    # "../testrepos/fzf/godo_main/10min_run_info/output",
+    # "../testrepos/fzf/godo_main/30s_run_info/output",
+    # "../testrepos/fzf/godo_main/15s_run_info/output",
+    # gin
+    # "../testrepos/gin/godo_main/1min_run_info/output",
+    # "../testrepos/gin/godo_main/5min_run_info/output",
+    # "../testrepos/gin/godo_main/10min_run_info/output",
+    # "../testrepos/gin/godo_main/30s_run_info/output",
+    # "../testrepos/gin/godo_main/15s_run_info/output",
+    # gorm
+    # "../testrepos/gorm/godo_main/1min_run_info/output",
+    # "../testrepos/gorm/godo_main/5min_run_info/output",
+    # "../testrepos/gorm/godo_main/10min_run_info/output",
+    # "../testrepos/gorm/godo_main/30s_run_info/output",
+    # "../testrepos/gorm/godo_main/15s_run_info/output",
+    # harness
+    # "../testrepos/harness/godo_main/1min_run_info/output",
+    # "../testrepos/harness/godo_main/5min_run_info/output",
+    # "../testrepos/harness/godo_main/10min_run_info/output",
+    # "../testrepos/harness/godo_main/30s_run_info/output",
+    # "../testrepos/harness/godo_main/15s_run_info/output",
+    # kit
+    # "../testrepos/kit/godo_main/1min_run_info/output",
+    # "../testrepos/kit/godo_main/5min_run_info/output",
+    # "../testrepos/kit/godo_main/10min_run_info/output",
+    # "../testrepos/kit/godo_main/30s_run_info/output",
+    # "../testrepos/kit/godo_main/15s_run_info/output",
+    # logrus
+    # "../testrepos/logrus/godo_main/1min_run_info/output",
+    # "../testrepos/logrus/godo_main/5min_run_info/output",
+    # "../testrepos/logrus/godo_main/10min_run_info/output",
+    # "../testrepos/logrus/godo_main/30s_run_info/output",
+    # "../testrepos/logrus/godo_main/15s_run_info/output",
+    # nsq
+    # "../testrepos/nsq/godo_main/1min_run_info/output",
+    # "../testrepos/nsq/godo_main/5min_run_info/output",
+    "../testrepos/nsq/godo_main/10min_run_info/output",
+    # "../testrepos/nsq/godo_main/30s_run_info/output",
+    # "../testrepos/nsq/godo_main/15s_run_info/output",
 ]
