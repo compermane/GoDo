@@ -1,0 +1,1 @@
+ok  	github.com/wagoodman/dive/godo_test	30.209s	coverage: 8.0% of statements in ../cmd, ../dive, ../dive/filetree, ../dive/image, ../dive/image/docker, ../dive/image/podman, ../runtime, ../runtime/ci, ../runtime/export, ../runtime/ui, ../runtime/ui/format, ../runtime/ui/key, ../runtime/ui/layout, ../runtime/ui/layout/compound, ../runtime/ui/view, ../utils

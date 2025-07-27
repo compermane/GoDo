@@ -1,0 +1,1 @@
+ok  	github.com/sirupsen/logrus/godo_test	43.843s	coverage: 29.3% of statements in ../, ../hooks/syslog, ../hooks/writer, ../hooks/test, ../internal/testutils

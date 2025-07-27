@@ -1,0 +1,1 @@
+Para a execução de 30 runs de 5min, ocorreram 30 erros

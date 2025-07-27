@@ -1,0 +1,1 @@
+Para a execução de 30 runs de 30s, ocorreram 2 erros

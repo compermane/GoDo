@@ -1,0 +1,1 @@
+ok  	github.com/nsqio/nsq/godo_test	307.304s	coverage: 18.9% of statements in ../internal/app, ../internal/auth, ../internal/clusterinfo, ../internal/dirlock, ../internal/http_api, ../internal/lg, ../internal/pqueue, ../internal/protocol, ../internal/quantile, ../internal/statsd, ../internal/stringy, ../internal/util, ../internal/writers, ../nsqadmin, ../nsqd, ../nsqlookupd
